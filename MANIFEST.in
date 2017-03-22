@@ -1,0 +1,10 @@
+# This file tells sdist which addional files to include in the distribution it builds.
+# That distribution is used as the base for building the .deb with stdeb, and certain files
+# (such as header files and .md files) are not included by default.
+# See https://docs.python.org/2/distutils/sourcedist.html#manifest-template
+
+include README.md
+include LICENSE.md
+prune test
+prune build
+prune docs
