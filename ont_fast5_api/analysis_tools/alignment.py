@@ -1,11 +1,13 @@
 """ Helper class for working with alignment type analyses.
 """
 import numpy as np
+
+from ont_fast5_api.analysis_tools.base_tool import BaseTool
 from ont_fast5_api.fast5_file import Fast5File
 from ont_fast5_api.analysis_tools.segmentation import SegmentationTools
 
 
-class AlignmentTools(object):
+class AlignmentTools(BaseTool):
     """ Provides helper methods specific to alignment analyses.
     """
     
@@ -56,19 +58,6 @@ class AlignmentTools(object):
                                                'calibration_strand']):
             self.close()
             raise Exception('Analysis does not appear to be an alignment component.')
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exception_type, exception_value, traceback):
-        self.close()
-        return False
-
-    def close(self):
-        """ Closes the object.
-        """
-        if self.handle and self.close_handle_when_done:
-            self.handle.close()
 
     def get_results(self):
         """ Get details about the alignments that have been performed.

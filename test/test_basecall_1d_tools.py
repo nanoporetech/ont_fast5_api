@@ -1,4 +1,3 @@
-#!/usr/bin/python
 import os
 import sys
 import unittest
@@ -14,7 +13,6 @@ py3 = sys.version_info.major == 3
 
 
 class TestBasecall1DTools(unittest.TestCase):
-
     def setUp(self):
         self.save_path = save_path
         if not os.path.exists(self.save_path):
@@ -81,7 +79,3 @@ class TestBasecall1DTools(unittest.TestCase):
                 self.assertEqual(n2, 'complement')
                 self.assertEqual(s2, seq2)
                 self.assertEqual(q2, qstring2)
-
-
-if __name__ == '__main__':
-    unittest.main()

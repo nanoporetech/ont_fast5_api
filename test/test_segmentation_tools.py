@@ -1,8 +1,7 @@
-#!/usr/bin/python
 import os
 import unittest
 import numpy as np
-from shutil import rmtree, copyfile
+from shutil import rmtree
 from ont_fast5_api.fast5_file import Fast5File
 from ont_fast5_api.analysis_tools.event_detection import EventDetectionTools
 from ont_fast5_api.analysis_tools.segmentation import SegmentationTools
@@ -10,8 +9,8 @@ from ont_fast5_api.analysis_tools.segmentation import SegmentationTools
 test_data = os.path.join(os.path.dirname(__file__), 'data')
 save_path = os.path.join(os.path.dirname(__file__), 'tmp')
 
-class TestSegmentationTools(unittest.TestCase):
 
+class TestSegmentationTools(unittest.TestCase):
     def setUp(self):
         self.save_path = save_path
         if not os.path.exists(self.save_path):
@@ -82,7 +81,8 @@ class TestSegmentationTools(unittest.TestCase):
                 data['length'][97] = 20
                 read_attrs = {'read_number': 12}
                 evdet.set_event_data(data, read_attrs)
-            attrs = {'name': 'test', 'version': 0, 'time_stamp': 'just now', 'event_detection': 'Analyses/EventDetection_000'}
+            attrs = {'name': 'test', 'version': 0, 'time_stamp': 'just now',
+                     'event_detection': 'Analyses/EventDetection_000'}
             fh.add_analysis('segmentation', 'Segmentation_000', attrs)
             segment_data = {'has_template': 1,
                             'has_complement': 1,
@@ -103,7 +103,3 @@ class TestSegmentationTools(unittest.TestCase):
                                       'duration_template': 470,
                                       'first_sample_complement': 520,
                                       'duration_complement': 460}, results)
-
-
-if __name__ == '__main__':
-    unittest.main()

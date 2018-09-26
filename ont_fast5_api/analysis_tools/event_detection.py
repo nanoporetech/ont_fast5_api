@@ -1,68 +1,17 @@
 """ Helper class for working with event detection type analyses.
 """
 import numpy as np
+
+from ont_fast5_api.analysis_tools.base_tool import BaseTool
 from ont_fast5_api.fast5_file import Fast5File
 
 
-class EventDetectionTools(object):
+class EventDetectionTools(BaseTool):
     """ Provides helper methods specific to event detection analyses.
     """
-    
-    def __init__(self, source, mode='r', group_name=None, meta=None, config=None):
-        """ Create a new event detection tools object.
-        
-        :param source: Either an open Fast5File object, or a filename
-            of a fast5 file.
-        :param mode: The open mode (r or r+). Only if a filename is used
-            for the source argument.
-        :param group_name: The specific event detection analysis instance
-            you are interested in.
-        :param meta: Metadata for a new event detection analysis.
-        :param config: Configuration data for a new event detection analysis.
-        
-        To create a new event detection analysis, provide a group name that
-        does not already exist, and an optional dictionary with the metadata.
-        The following fields are recommended, as a minimum:
 
-            * name - The name of the event detection software used.
-            * time_stamp - The time at which the analysis was performed.
-        
-        If the group name already exists, the "meta" parameter is ignored. If
-        the specified group has a "component" attribute, and its value is not
-        "event_detection", an exception will be thrown.
-        """
-        if isinstance(source, Fast5File):
-            self.handle = source
-            self.close_handle_when_done = False
-        elif isinstance(source, str):
-            self.handle = Fast5File(source, mode)
-            self.close_handle_when_done = True
-        else:
-            raise Exception('Unrecognized type for argument "source".')
-        if group_name is None:
-            group_name = self.handle.get_latest_analysis('EventDetection')
-            if group_name is None:
-                raise Exception('No EventDetection analysis group found in file.')
-        self.group_name = group_name
-        attrs = self.handle.get_analysis_attributes(group_name)
-        if attrs is None:
-            self._new_analysis(meta, config)
-            attrs = self.handle.get_analysis_attributes(group_name)
-        if 'component' in attrs and attrs['component'] != 'event_detection':
-            raise Exception('Analysis does not appear to be an event detection component.')
-    
-    def __enter__(self):
-        return self
-    
-    def __exit__(self, exception_type, exception_value, traceback):
-        self.close()
-        return False
-    
-    def close(self):
-        """ Closes the object.
-        """
-        if self.handle and self.close_handle_when_done:
-            self.handle.close()
+    group_id = 'EventDetection'
+    analysis_id = 'event_detection'
 
     def set_event_data(self, data, read_attrs):
         """ Set event data with the specied attributes.

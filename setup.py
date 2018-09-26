@@ -1,28 +1,43 @@
 import os
 import re
-from setuptools import setup
+from setuptools import setup, find_packages
 
-verstrline = open('ont_fast5_api/__init__.py', 'r').read()
-vsre = r"^__version__ = ['\"]([^'\"]*)['\"]"
-mo = re.search(vsre, verstrline, re.M)
-if mo:
-    verstr = mo.group(1)
-else:
-    raise RuntimeError('Unable to find version string in "ont_fast5_api/__init__.py".')
+__pkg_name__ = 'ont_fast5_api'
+
+
+def get_version():
+    init_file = os.path.join(__pkg_name__, '__init__.py')
+    with open(init_file, 'r') as init_fh:
+        verstrline = init_fh.read()
+    vsre = r"^__version__ = ['\"]([^'\"]*)['\"]"
+    mo = re.search(vsre, verstrline, re.M)
+    if mo:
+        return mo.group(1)
+    else:
+        raise RuntimeError("Unable to find version string in '{}'".format(init_file))
+
+
+with open('README.rst') as readme:
+    documentation = readme.read()
 
 installation_requirements = []
 if 'IGNORE_INCLUDES' not in os.environ:
-    installation_requirements = ['h5py', 'numpy>=1.8.1']
+    installation_requirements = ['h5py>=2.2.1', 'numpy>=1.8.1',
+                                 'six>=1.9', 'progressbar33>=2.3.1']
 
-setup(name='ont-fast5-api',
+setup(name=__pkg_name__.replace("_", "-"),
       author='Oxford Nanopore Technologies, Limited',
       description='Oxford Nanopore Technologies fast5 API software',
-      long_description=open('README.md').read(),
-      version=verstr,
-      url='https://github.com/nanoporetech/ont_fast5_api',
+      long_description=documentation,
+      version=get_version(),
+      url='https://github.com/nanoporetech/{}'.format(__pkg_name__),
       install_requires=installation_requirements,
       license='MPL 2.0',
-      packages=['ont_fast5_api', 'ont_fast5_api.analysis_tools'],
+      packages=find_packages(),
+      entry_points={'console_scripts': [
+          "multi_to_single_fast5={}.conversion_tools.multi_to_single_fast5:main".format(__pkg_name__),
+          "single_to_multi_fast5={}.conversion_tools.single_to_multi_fast5:main".format(__pkg_name__)
+      ]},
       classifiers=[
           'Development Status :: 5 - Production/Stable',
           'Environment :: Console',

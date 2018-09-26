@@ -101,7 +101,7 @@ class Fast5Writer(object):
             fh.add_read(strand['read_attrs']['read_number'], strand['read_attrs']['read_id'],
                         strand['read_attrs']['start_time'], strand['read_attrs']['duration'],
                         strand['read_attrs'].get('start_mux', 0),
-                        strand['read_attrs'].get('median_before', 0.0))
+                        strand['read_attrs'].get('median_before', -1.0))
             if raw_data is not None:
                 fh.add_raw_data(strand['read_attrs']['read_number'], raw_data)
             if event_data is not None:

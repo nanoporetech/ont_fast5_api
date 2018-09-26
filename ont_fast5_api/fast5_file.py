@@ -7,7 +7,7 @@ import numpy as np
 from collections import deque
 try:
     from ConfigParser import ConfigParser
-except:  # python3
+except ImportError:  # python3
     from configparser import ConfigParser
 from ont_fast5_api.fast5_info import _clean, Fast5Info, ReadInfo
 from ont_fast5_api import CURRENT_FAST5_VERSION
@@ -35,43 +35,16 @@ LEGACY_COMPONENT_NAMES = {'Alignment': 'alignment',
                           'arma': 'arma',
                           'Basic_component': 'basic_component',
                           }
+supported_modes = ('r', 'r+', 'w', 'w-', 'x', 'a')
+mode_docstring = """Supported file modes:
+    r        Readonly, file must exist (default)
+    r+       Read/write, file must exist
+    w        Create file, truncate if exists
+    w- or x  Create file, fail if exists
+    a        Read/write if exists, create otherwise""" # Taken from h5py
 
 
-class Fast5File(object):
-    """ This object encapsulates a read fast5 file. It can be used
-    instead of directly using the h5py API in order to help maintain
-    consistency in fast5 file format, and simplify common tasks.
-
-    The object will contain a field called **status** that is a
-    Fast5Status object with details about the file.
-    """
-
-    def __init__(self, fname, mode='r'):
-        """ Constructor. Opens the specified file.
-
-        :param fname: Filename to open.
-        :param mode: File open mode (r, r+, w, w-, x).
-        """
-        if mode not in ['r', 'r+', 'w', 'w-', 'x']:
-            raise IOError('Unsupported file handle mode : "{}" use {}'.format(mode, ['r', 'r+', 'w', 'w-', 'x']))
-        self.filename = fname
-        self.handle = None
-        self._is_open = False
-        if mode in ['w', 'w-', 'x']:
-            with h5py.File(fname, mode) as fh:
-                fh.attrs['file_version'] = CURRENT_FAST5_VERSION
-                fh.create_group('Analyses')
-                fh.create_group('Raw/Reads')
-                fh.create_group('UniqueGlobalKey/channel_id')
-                fh.create_group('UniqueGlobalKey/context_tags')
-                fh.create_group('UniqueGlobalKey/tracking_id')
-            mode = 'r+'
-        self.mode = mode
-        self.status = Fast5Info(self.filename)
-        if self.status.valid:
-            self.handle = h5py.File(self.filename, self.mode)
-            self._is_open = True
-
+class AbstractFast5File(object):
     def __enter__(self):
         return self
 
@@ -85,8 +58,9 @@ class Fast5File(object):
 
     def assert_writeable(self):
         self.assert_open()
-        if self.mode != 'r+':
-            raise IOError("Fast5 file is not in writable mode: {} in {}".format(self.mode, self.filename))
+        if self.mode == 'r':
+            raise IOError("Fast5 file is in read-only mode '{}' {}".format(self.mode, self.filename))
+
 
     def close(self):
         """ Closes the object.
@@ -100,11 +74,38 @@ class Fast5File(object):
             self._is_open = False
             self.status = None
 
+
+
+class Fast5File(AbstractFast5File):
+    """ This object encapsulates a read fast5 file. It can be used
+    instead of directly using the h5py API in order to help maintain
+    consistency in fast5 file format, and simplify common tasks.
+
+    The object will contain a field called **status** that is a
+    Fast5Status object with details about the file.
+    """
+
+    def __init__(self, fname, mode='r'):
+        """ Constructor. Opens the specified file.
+
+        :param fname: Filename to open.
+        :param mode: File open mode (r, r+, w, w-, x, a).
+        """
+        self.global_key = "UniqueGlobalKey/"
+        if mode not in supported_modes:
+            raise IOError("Unsupported file handle mode : '{}' {}".format(mode, mode_docstring))
+        self.filename = fname
+        self.handle = None
+        self._is_open = False
+        self.mode = mode
+        self._initialise_file()
+
+
     def get_tracking_id(self):
         """ Returns a dictionary of tracking-id key/value pairs.
         """
         self.assert_open()
-        tracking = self.handle['UniqueGlobalKey/tracking_id'].attrs.items()
+        tracking = self.handle[self.global_key +'tracking_id'].attrs.items()
         tracking = {key: _clean(value) for key, value in tracking}
         return tracking
 
@@ -116,14 +117,14 @@ class Fast5File(object):
         :param clear: If set, any existing tracking-id data will be removed. 
         """
         self.assert_writeable()
-        self._add_attributes('UniqueGlobalKey/tracking_id', data, clear)
+        self._add_attributes(self.global_key + 'tracking_id', data, clear)
         return
 
     def get_channel_info(self):
         """ Returns a dictionary of channel information key/value pairs.
         """
         self.assert_open()
-        channel_info = self.handle['UniqueGlobalKey/channel_id'].attrs.items()
+        channel_info = self.handle[self.global_key + 'channel_id'].attrs.items()
         channel_info = {key: _clean(value) for key, value in channel_info}
         channel_info['channel_number'] = int(channel_info['channel_number'])
         return channel_info
@@ -136,17 +137,20 @@ class Fast5File(object):
         :param clear: If set, any existing channel info data will be removed. 
         """
         self.assert_writeable()
-        self._add_attributes('UniqueGlobalKey/channel_id', data, clear)
+        self._add_attributes(self.global_key + 'channel_id', data, clear)
+
+    @property
+    def has_context_tags(self):
+        return 'context_tags' in self.handle[self.global_key[:-1]]
 
     def get_context_tags(self):
         """ Returns a dictionary of context tag key/value pairs.
         """
         self.assert_open()
-        tags = {}
-        if 'context_tags' in self.handle['UniqueGlobalKey']:
-            tags = self.handle['UniqueGlobalKey/context_tags'].attrs.items()
-            tags = {key: _clean(value) for key, value in tags}
-        return tags
+        if self.has_context_tags:
+            tags = self.handle[self.global_key + 'context_tags'].attrs.items()
+            return {key: _clean(value) for key, value in tags}
+        return {}
 
     def add_context_tags(self, data, clear=False):
         """ Replaces any existing context tag data with the provided values.
@@ -156,10 +160,10 @@ class Fast5File(object):
         :param clear: If set, any existing context tag data will be removed. 
         """
         self.assert_writeable()
-        if 'context_tags' in self.handle['UniqueGlobalKey']:
-            self._add_attributes('UniqueGlobalKey/context_tags', data, clear)
+        if self.has_context_tags:
+            self._add_attributes(self.global_key + 'context_tags', data, clear)
         else:
-            self._add_group('UniqueGlobalKey/context_tags', data)
+            self._add_group(self.global_key + 'context_tags', data)
 
     def get_raw_data(self, read_number=None, start=None, end=None, scale=False):
         """ Pull raw data from the file.
@@ -186,8 +190,8 @@ class Fast5File(object):
             end = self.status.read_info[read_index].duration
         if start is None:
             start = 0
-        results = self._load_raw(read_number, start, end, scale)
-        return results
+        dataset_name = 'Raw/Reads/Read_{}/Signal'.format(read_number)
+        return self._load_raw(dataset_name, start, end, scale)
 
     def add_raw_data(self, read_number, data):
         """ Add raw data for a read.
@@ -213,7 +217,6 @@ class Fast5File(object):
         :returns: A list of component-name/group-name pairs (tuples).
         """
         self.assert_open()
-
         analyses = []
         if 'Analyses' not in self.handle:
             return analyses
@@ -221,10 +224,13 @@ class Fast5File(object):
         for group_name in ana_groups:
             group_attrs = self.handle['Analyses/{}'.format(group_name)].attrs
             if 'component' in group_attrs:
-                comp = group_attrs['component']
-            else:
+                comp = _clean(group_attrs['component'])
+            elif group_name[:-4] in LEGACY_COMPONENT_NAMES:
                 comp = LEGACY_COMPONENT_NAMES[group_name[:-4]]
-            if component is None or comp == component:
+            else:
+                # We don't know anything about this component!
+                comp = None
+            if comp is not None and (component is None or comp == component):
                 analyses.append((comp, group_name))
         return analyses
 
@@ -333,7 +339,7 @@ class Fast5File(object):
         ability to operate on those reads with standard tools.
         """
         self.assert_writeable()
-        read_info = ReadInfo(read_number, read_id, start_time, duration, mux, median_before)
+        read_info = ReadInfo(read_number, read_id, start_time, duration, mux=mux, median_before=median_before)
         self.status.read_info.append(read_info)
         n = len(self.status.read_info) - 1
         self.status.read_number_map[read_number] = n
@@ -370,6 +376,18 @@ class Fast5File(object):
         self.handle[group].create_group('Configuration')
         if config is not None:
             self._add_attribute_tree(cfg_group, config)
+
+    def add_log(self, group_name, field_name, log_string):
+        """ Add a log the file.
+        :param group_name: Global group name. Cave: No 'Analyses' is prepended.
+        :param field_name: A field {group_name}/{field_name} will be written.
+        :param log_string: content to be written.
+        """
+        self.assert_writeable()
+        if group_name not in self.handle:
+            self._add_group(group_name, {})
+        sanitized_data = _sanitize_data_for_writing(log_string)
+        self.handle[group_name].create_dataset(field_name, data=sanitized_data)
 
     def set_summary_data(self, group_name, section_name, data):
         """ Set the summary data for an analysis group.
@@ -509,7 +527,13 @@ class Fast5File(object):
             raise KeyError(msg.format(group_name, self.filename))
 
         sanitized_data = _sanitize_data_for_writing(data)
-        self.handle[group_path].create_dataset(dataset_name, data=sanitized_data)
+        if np.shape(sanitized_data) == ():  # We can't compress scalar datasets
+            self.handle[group_path].create_dataset(dataset_name,
+                                                   data=sanitized_data)
+        else:
+            self.handle[group_path].create_dataset(dataset_name,
+                                                   data=sanitized_data,
+                                                   compression='gzip')
         if attrs is not None:
             path = '{}/{}'.format(group_path, dataset_name)
             self._add_attributes(path, attrs)
@@ -634,11 +658,10 @@ class Fast5File(object):
     #
     ##########################
 
-    def _load_raw(self, read_number, start, end, scale):
-        dataset_name = 'Raw/Reads/Read_{}/Signal'.format(read_number)
+    def _load_raw(self, dataset_name, start, end, scale):
         raw = self.handle[dataset_name]
         if scale:
-            channel_info = self.handle['UniqueGlobalKey/channel_id'].attrs
+            channel_info = self.handle[self.global_key + 'channel_id'].attrs
             digi = channel_info['digitisation']
             parange = channel_info['range']
             offset = channel_info['offset']
@@ -702,6 +725,20 @@ class Fast5File(object):
             data[folder] = {key: _clean(value) for key, value in attr}
         return data
 
+    def _initialise_file(self):
+        if self.mode in ['w', 'w-', 'x']:
+            with h5py.File(self.filename, self.mode) as fh:
+                fh.attrs['file_version'] = CURRENT_FAST5_VERSION
+                fh.create_group('Analyses')
+                fh.create_group('Raw/Reads')
+                fh.create_group(self.global_key + 'channel_id')
+                fh.create_group(self.global_key + 'context_tags')
+                fh.create_group(self.global_key + 'tracking_id')
+            self.mode = 'r+'
+        self.status = Fast5Info(self.filename)
+        if self.status.valid:
+            self.handle = h5py.File(self.filename, self.mode)
+            self._is_open = True
 
 def _sanitize_data_for_writing(data):
     # We only really need to do interesting conversions for python3

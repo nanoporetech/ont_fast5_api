@@ -11,7 +11,7 @@ class ReadInfo(object):
     """
     
     def __init__(self, read_number, read_id, start_time, duration,
-                 mux=0, median_before=0):
+                 mux=0, median_before=-1.0):
         """ Constructs an object describing a read.
         
         :param read_number: A read number, unique for the channel.
@@ -98,8 +98,9 @@ class Fast5Info(object):
                                 read_id = os.path.basename(fname)
                         start_time = _clean(read_attrs['start_time'])
                         duration = _clean(read_attrs['duration'])
-                        mux = _clean(read_attrs['start_mux'])
-                        read_info = ReadInfo(read_number, read_id, start_time, duration, mux)
+                        mux = _clean(read_attrs.get('start_mux',0))
+                        median_before = _clean(read_attrs.get('median_before',-1.0))
+                        read_info = ReadInfo(read_number, read_id, start_time, duration, mux, median_before)
                         if 'Signal' in read_group:
                             read_info.has_raw_data = True
                         elif self.version < 1.1:
@@ -136,8 +137,9 @@ class Fast5Info(object):
                                     read_id = os.path.basename(fname)
                             start_time = _clean(read_attrs['start_time'])
                             duration = _clean(read_attrs['duration'])
-                            mux = _clean(read_attrs['start_mux'])
-                            read_info = ReadInfo(read_number, read_id, start_time, duration, mux)
+                            mux = _clean(read_attrs.get('start_mux', 0))
+                            median_before = _clean(read_attrs.get('median_before', -1.0))
+                            read_info = ReadInfo(read_number, read_id, start_time, duration, mux, median_before)
                             if 'Events' in read_group:
                                 read_info.has_event_data = True
                                 read_info.event_data_count = len(read_group['Events'])
@@ -174,6 +176,9 @@ def _clean(value):
         else:
             return value.tolist()
     elif type(value).__module__ == np.__name__:
+        # h5py==2.8.0 on windows sometimes fails to cast this from an np.float64 to a python.float
+        # We have explicitly cast in Albacore (merge 488) to avoid this bug, since casting here could be dangerous
+        # https://github.com/h5py/h5py/issues/1051
         conversion = np.asscalar(value)
         if sys.version_info.major == 3 and isinstance(conversion, bytes):
             conversion = conversion.decode()

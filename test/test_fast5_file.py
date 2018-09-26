@@ -1,7 +1,7 @@
-#!/usr/bin/python
 import os
 import unittest
 import sys
+
 try:
     from ConfigParser import ConfigParser
 except:  # python3
@@ -11,6 +11,7 @@ from numpy import array, ndarray
 from shutil import rmtree, copyfile
 from tempfile import NamedTemporaryFile
 
+from ont_fast5_api import CURRENT_FAST5_VERSION
 from ont_fast5_api.fast5_info import Fast5Info, _clean
 from ont_fast5_api.fast5_file import (Fast5File,
                                       _sanitize_data_for_reading,
@@ -23,7 +24,6 @@ py3 = sys.version_info.major == 3
 
 
 class TestFast5File(unittest.TestCase):
-
     def setUp(self):
         self.maxDiff = None
         self.save_path = save_path
@@ -59,18 +59,18 @@ class TestFast5File(unittest.TestCase):
                                'read_number': 199}],
                     'tracking_id': {u'device_id': '445444'},
                     'data': {u'split_hairpin': {u'median_sd_comp': 1.4719812720343015,
-                                               u'range_comp': 3.965029408419298,
-                                               u'median_level_temp': 88.66729546440973,
-                                               u'duration_temp': 327.82499999999936,
-                                               u'num_temp': 10773,
-                                               u'num_events': 24091,
-                                               u'median_sd_temp': 1.328457722537222,
-                                               u'range_temp': 4.01780031383548,
-                                               u'median_level_comp': 89.8680971725336,
-                                               u'split_index': 10903,
-                                               u'duration_comp': 422.3665999999994,
-                                               u'num_comp': 13158},
-                            u'empty': {}},
+                                                u'range_comp': 3.965029408419298,
+                                                u'median_level_temp': 88.66729546440973,
+                                                u'duration_temp': 327.82499999999936,
+                                                u'num_temp': 10773,
+                                                u'num_events': 24091,
+                                                u'median_sd_temp': 1.328457722537222,
+                                                u'range_temp': 4.01780031383548,
+                                                u'median_level_comp': 89.8680971725336,
+                                                u'split_index': 10903,
+                                                u'duration_comp': 422.3665999999994,
+                                                u'num_comp': 13158},
+                             u'empty': {}},
                     'software': {u'time_stamp': '2014-Jun-04 16:28:31',
                                  u'version': '0.5.4',
                                  'component': u'Validation'}}
@@ -88,7 +88,7 @@ class TestFast5File(unittest.TestCase):
             fast5.add_analysis_attributes('Test_000', att2)
             att_in = fast5.get_analysis_attributes('Test_000')
             att.update(att2)
-            self.assertEqual(att, att_in) 
+            self.assertEqual(att, att_in)
 
     def test_003_add_analysis_subgroup(self):
         fname = os.path.join(self.save_path, 'group_test.fast5')
@@ -108,7 +108,7 @@ class TestFast5File(unittest.TestCase):
         copyfile(fname, new_file)
         Fast5File.update_legacy_file(new_file)
         result = Fast5Info(new_file)
-        self.assertEqual(1.1, result.version)
+        self.assertEqual(CURRENT_FAST5_VERSION, result.version)
         self.assertEqual(1, len(result.read_info))
         self.assertEqual(5804, result.read_info[0].read_number)
         # Load the event data.
@@ -134,7 +134,7 @@ class TestFast5File(unittest.TestCase):
         copyfile(fname, new_file)
         Fast5File.update_legacy_file(new_file)
         result = Fast5Info(new_file)
-        self.assertEqual(1.1, result.version)
+        self.assertEqual(CURRENT_FAST5_VERSION, result.version)
         self.assertEqual(1, len(result.read_info))
         self.assertEqual(627, result.read_info[0].read_number)
         # Load the event data.
@@ -163,7 +163,7 @@ class TestFast5File(unittest.TestCase):
         copyfile(fname, new_file)
         Fast5File.update_legacy_file(new_file)
         result = Fast5Info(new_file)
-        self.assertEqual(1.1, result.version)
+        self.assertEqual(CURRENT_FAST5_VERSION, result.version)
         self.assertEqual(1, len(result.read_info))
         self.assertEqual(59, result.read_info[0].read_number)
         # Load the event data.
@@ -361,7 +361,3 @@ class TestFast5File(unittest.TestCase):
             _sanitize_data_for_reading(test_ndarray_bytes)
         with self.assertRaises(TypeError):
             _sanitize_data_for_writing(test_ndarray_utf8)
-
-
-if __name__ == '__main__':
-    unittest.main()

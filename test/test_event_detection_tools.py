@@ -1,18 +1,15 @@
-#!/usr/bin/python
 import os
 import unittest
 import numpy as np
-from shutil import rmtree, copyfile
+from shutil import rmtree
 from ont_fast5_api.fast5_file import Fast5File
 from ont_fast5_api.analysis_tools.event_detection import EventDetectionTools
-
 
 test_data = os.path.join(os.path.dirname(__file__), 'data')
 save_path = os.path.join(os.path.dirname(__file__), 'tmp')
 
 
 class TestEventDetectionTools(unittest.TestCase):
-
     def setUp(self):
         self.save_path = save_path
         if not os.path.exists(self.save_path):
@@ -25,7 +22,7 @@ class TestEventDetectionTools(unittest.TestCase):
     def test_001_read_events(self):
         # Check that it is recognized properly.
         fname = os.path.join(test_data, 'read_file_v1.0_single.fast5')
-        with EventDetectionTools(fname, mode='r',) as fh:
+        with EventDetectionTools(fname, mode='r', ) as fh:
             self.assertTrue(fh.has_event_data)
             self.assertTrue(fh.has_event_data(read_number=59))
             self.assertEqual('EventDetection_000', fh.group_name)
@@ -40,7 +37,7 @@ class TestEventDetectionTools(unittest.TestCase):
             self.assertEqual(118, data[0]['length'])
             data, attrs = fh.get_event_data(time_in_seconds=True)
             self.assertEqual(0.0236, data[0]['length'])
-    
+
     def test_002_write_events(self):
         fname = os.path.join(self.save_path, 'test.fast5')
         with Fast5File(fname, 'w') as fh:
@@ -67,7 +64,3 @@ class TestEventDetectionTools(unittest.TestCase):
                                       u'start_mux': 0,
                                       u'median_before': 120.75}, attrs)
                 self.assertEqual(100, data.size)
-
-
-if __name__ == '__main__':
-    unittest.main()

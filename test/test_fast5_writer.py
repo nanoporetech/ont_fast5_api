@@ -1,4 +1,3 @@
-#!/usr/bin/python
 import os
 import shutil
 import unittest
@@ -12,7 +11,6 @@ save_path = os.path.join(os.path.dirname(__file__), 'tmp')
 
 
 class TestFast5Writer(unittest.TestCase):
-
     def setUp(self):
         self._data = test_data
         self._path = save_path
@@ -33,7 +31,7 @@ class TestFast5Writer(unittest.TestCase):
         strand = {'run_id': 1, 'strand_id': 1, 'channel': 1,
                   'offset': 0, 'range': 1000.0, 'digitisation': 8192,
                   'sampling_rate': 5000, 'read_attrs': read_attrs}
-        names = ['mean', 'start', 'length', 'stdv', 'pos', 'levl']
+        names = ['mean', 'start', 'length', 'stdv', 'pos', 'labl']
         formats = [float, float, float, float, int, (str, 32)]
         raw = np.zeros(100, dtype=np.int16)
         data = np.empty(3, dtype=list(zip(names, formats)))
@@ -42,7 +40,7 @@ class TestFast5Writer(unittest.TestCase):
         data['length'] = [1.5, 2.0, 2.5]
         data['stdv'] = [1.0, 1.2, 1.4]
         data['pos'] = [0, 1, 3]
-        data['levl'] = ['TTT', 'TTC', 'CGA']
+        data['labl'] = ['TTT', 'TTC', 'CGA']
         strand['event_data'] = data
         strand['raw_data'] = raw
         with Fast5Writer(self._path, 'writer_test1', 1) as writer:
@@ -78,7 +76,7 @@ class TestFast5Writer(unittest.TestCase):
         strand = {'run_id': 1, 'strand_id': 1, 'channel': 1,
                   'offset': 0, 'range': 1000.0, 'digitisation': 8192,
                   'sampling_rate': 5000, 'read_attrs': read_attrs}
-        names = ['mean', 'start', 'length', 'stdv', 'pos', 'levl']
+        names = ['mean', 'start', 'length', 'stdv', 'pos', 'labl']
         formats = [float, float, float, float, int, (str, 32)]
         raw = np.zeros(100, dtype=np.int16)
         data = np.empty(3, dtype=list(zip(names, formats)))
@@ -87,7 +85,7 @@ class TestFast5Writer(unittest.TestCase):
         data['length'] = [1.5, 2.0, 2.5]
         data['stdv'] = [1.0, 1.2, 1.4]
         data['pos'] = [0, 1, 3]
-        data['levl'] = ['TTT', 'TTC', 'CGA']
+        data['labl'] = ['TTT', 'TTC', 'CGA']
         strand['event_data'] = data
         strand['raw_data'] = raw
         with Fast5Writer(self._path, 'writer_test2', 2) as writer:
@@ -110,7 +108,3 @@ class TestFast5Writer(unittest.TestCase):
                                        os.path.join(self._data, fname))
             self.assertTrue(result,
                             'File {} failed the regression test.'.format(fname))
-
-
-if __name__ == '__main__':
-    unittest.main()

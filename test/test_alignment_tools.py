@@ -1,8 +1,7 @@
-#!/usr/bin/python
 import os
 import unittest
 import numpy as np
-from shutil import rmtree, copyfile
+from shutil import rmtree
 from ont_fast5_api.fast5_file import Fast5File
 from ont_fast5_api.analysis_tools.alignment import AlignmentTools
 
@@ -149,7 +148,3 @@ class TestAlignmentTools(unittest.TestCase):
                               'num_deletions': 4,
                               'identity': 0.9796,
                               'accuracy': 0.9057}, results['2d'])
-
-
-if __name__ == '__main__':
-    unittest.main()

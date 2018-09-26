@@ -1,9 +1,10 @@
-#!/usr/bin/python
 import os
 import sys
 import unittest
+import warnings
 import numpy as np
 from shutil import rmtree
+import ont_fast5_api
 from ont_fast5_api.fast5_file import Fast5File
 from ont_fast5_api.analysis_tools.basecall_2d import Basecall2DTools
 
@@ -14,7 +15,6 @@ py3 = sys.version_info.major == 3
 
 
 class TestBasecall2DTools(unittest.TestCase):
-
     def setUp(self):
         self.save_path = save_path
         if not os.path.exists(self.save_path):
@@ -53,18 +53,14 @@ class TestBasecall2DTools(unittest.TestCase):
             with Basecall2DTools(fh, group_name='Basecall_2D_000') as basecall:
                 basecall.add_prior_alignment(data1)
                 basecall.add_2d_call_alignment(data2)
-                basecall.add_called_sequence('test_2d', seq, qstring)
+                basecall.add_called_sequence("2D", 'test_2d', seq, qstring)
         with Fast5File(fname, mode='r') as fh:
             with Basecall2DTools(fh, group_name='Basecall_2D_000') as basecall:
                 hp_align = basecall.get_prior_alignment()
                 np.testing.assert_array_equal(hp_align, data1)
                 bc2d = basecall.get_2d_call_alignment()
                 np.testing.assert_array_equal(bc2d, data2)
-                n, s, q = basecall.get_called_sequence()
+                n, s, q = basecall.get_called_sequence("2D")
                 self.assertEqual(n, 'test_2d')
                 self.assertEqual(s, seq)
                 self.assertEqual(q, qstring)
-
-
-if __name__ == '__main__':
-    unittest.main()
