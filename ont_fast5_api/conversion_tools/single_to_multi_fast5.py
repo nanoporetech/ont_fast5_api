@@ -34,7 +34,7 @@ def create_multi_read_file(input_files, output_file):
                         add_read_to_multi_fast5(multi_f5, single_f5)
                 except Exception as e:
                     logger.error("{}\n\tFailed to add single read file: '{}' to '{}'"
-                                 "".format(e, f, output_file), exc_info=exc_info)
+                                 "".format(e, filename, output_file), exc_info=exc_info)
     except Exception as e:
         logger.error("{}\n\tFailed to write to MultiRead file: {}"
                      "".format(e, output_file), exc_info=exc_info)
