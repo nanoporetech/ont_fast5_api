@@ -38,6 +38,25 @@ It requires:
 - `progressbar33 <https://github.com/germangh/python-progressbar>`_: 2.3.1 or higher
 
 
+Interface - get_fast5_file
+===============================================================================
+
+The ont_fast5_api provides a simple interface to access the data structures in fast5
+files of either single- or multi- read format using the same method calls.
+
+For example to print the raw data from all reads in a file::
+
+    from ont_fast5_api.fast5_interface import get_fast5_file
+    
+    def print_all_raw_data():
+        fast5_filepath = "test/data/single_reads/read0.fast5" # This can be a single- or multi-read file
+        with get_fast5_file(fast5_filepath, mode="r") as f5:
+            for read_id in f5.get_read_ids():
+                read = f5.get_read(read_id)
+                raw_data = read.get_raw_data()
+                print(read_id, raw_data)
+
+
 Interface - Console Scripts
 ===============================================================================
 The ``ont_fast5_api`` provides terminal/command-line ``console_scripts`` for

@@ -12,6 +12,9 @@ class Fast5Read(Fast5File):
         self.read_id = read_id
         self.global_key = ""
 
+    def get_read_id(self):
+        return self.read_id
+
     @property
     def _is_open(self):
         return self.parent._is_open

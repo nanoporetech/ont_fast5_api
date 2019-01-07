@@ -68,8 +68,6 @@ class Fast5Info(object):
 
                 # Check for required groups.
                 top_groups = handle.keys()
-                if 'Analyses' not in top_groups and self.version >= 1.1:
-                    self.valid = False
                 if 'UniqueGlobalKey' in top_groups:
                     global_keys = handle['UniqueGlobalKey'].keys()
                 if 'tracking_id' not in global_keys and self.version >= 1.1:

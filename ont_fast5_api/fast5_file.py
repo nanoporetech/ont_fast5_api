@@ -52,6 +52,13 @@ class AbstractFast5File(object):
         self.close()
         return False
 
+    def get_read_ids(self):
+        raise NotImplementedError()
+
+    def get_read(self, read_id):
+        raise NotImplementedError()
+
+
     def assert_open(self):
         if not self._is_open:
             raise IOError("Fast5 file is not open: {}".format(self.filename))
@@ -100,6 +107,18 @@ class Fast5File(AbstractFast5File):
         self.mode = mode
         self._initialise_file()
 
+
+    def get_read_ids(self):
+        return [self.get_read_id()]
+
+    def get_read(self, read_id):
+        if read_id != self.get_read_id():
+            raise KeyError("read_id given: {} does not match read_id in file: {}"
+                           "".format(read_id, self.get_read_id()))
+        return self
+
+    def get_read_id(self):
+        return self.status.read_info[0].read_id
 
     def get_tracking_id(self):
         """ Returns a dictionary of tracking-id key/value pairs.

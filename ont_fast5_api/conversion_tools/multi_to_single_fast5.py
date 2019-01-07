@@ -35,12 +35,16 @@ def count_reads(file_list):
 def batch_convert_multi_files_to_single(input_path, output_folder, batch_size, recursive):
     file_list = get_fast5_file_list(input_path, recursive)
     pbar = get_progress_bar(count_reads(file_list))
-    for filename in file_list:
-        convert_multi_to_single(filename, output_folder, batch_size, pbar)
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    with open(os.path.join(output_folder, "filename_mapping.txt"), 'w') as output_table:
+        output_table.write("multi_read_file\tsingle_read_file\n")
+        for filename in file_list:
+            convert_multi_to_single(filename, output_folder, batch_size, pbar, output_table)
     pbar.finish()
 
 
-def convert_multi_to_single(input_file, output_folder, batch_size, pbar):
+def convert_multi_to_single(input_file, output_folder, batch_size, pbar, output_table):
     count = pbar.currval
     try:
         with MultiFast5File(input_file, 'r') as multi_f5:
@@ -50,6 +54,8 @@ def convert_multi_to_single(input_file, output_folder, batch_size, pbar):
                     read = multi_f5.get_read(read_id)
                     output_file = os.path.join(output_folder, subfolder, "{}.fast5".format(read_id))
                     create_single_f5(output_file, read)
+                    output_table.write("{}\t{}\n".format(os.path.basename(input_file),
+                                                         os.path.basename(output_file)))
                     count += 1
                     pbar.update(count)
                 except Exception as e:
