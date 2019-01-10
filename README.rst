@@ -1,4 +1,9 @@
-API for interacting with Oxford Nanopore Technologies fast5 files
+.. image:: img/ONT_logo.png
+  :width: 800
+  :alt:  .
+
+
+ont_fast5_api
 ===============================================================================
 
 ``ont_fast5_api`` is a simple interface to HDF5 files of the Oxford Nanopore
@@ -26,7 +31,7 @@ Alternatively, it is available on github where it can be built from source::
     python setup.py install
 
 Dependencies
-===============================================================================
+-------------------------------------------------------------------------------
 ``ont_fast5_api`` is a pure python project and should run on most python
 versions and operating systems.
 
@@ -36,25 +41,6 @@ It requires:
 - `NumPy <https://www.numpy.org>`_: 1.8.1 or higher
 - `six <https://github.com/benjaminp/six>`_: 1.9 or higher
 - `progressbar33 <https://github.com/germangh/python-progressbar>`_: 2.3.1 or higher
-
-
-Interface - get_fast5_file
-===============================================================================
-
-The ont_fast5_api provides a simple interface to access the data structures in fast5
-files of either single- or multi- read format using the same method calls.
-
-For example to print the raw data from all reads in a file::
-
-    from ont_fast5_api.fast5_interface import get_fast5_file
-    
-    def print_all_raw_data():
-        fast5_filepath = "test/data/single_reads/read0.fast5" # This can be a single- or multi-read file
-        with get_fast5_file(fast5_filepath, mode="r") as f5:
-            for read_id in f5.get_read_ids():
-                read = f5.get_read(read_id)
-                raw_data = read.get_raw_data()
-                print(read_id, raw_data)
 
 
 Interface - Console Scripts
@@ -131,5 +117,18 @@ single Oxford Nanopore read. This may include raw signal data, run metadata,
 fastq-basecalls and any other additional analyses
 **Multi read fast5** - A fast5 file containing data pertaining to a multiple
 Oxford Nanopore reads.
-**Pip** - The python software package manager for installing python applications.
+
+Help
+==============================================================================
+
+Licence and Copyright:
+----------------------
+[c] 2018 Oxford Nanopore Technologies Ltd.
+
+``ont_fast5_api`` is distributed under the terms of the Oxford Nanopore Technologies Developer licence.
+Developer releases are provided to allow caveated access to source code and APIs for
+third-party tool development and exploration. Support is provided via this Github project and/or in
+the Community, here [https://community.nanoporetech.com/] and releases are accompanied by a release
+note at this website.
+
 

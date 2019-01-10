@@ -4,10 +4,17 @@ All notable changes and fixes to ont_fast5_api will be documented here
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 This project (aspires to) adhere to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+## [1.1.1] 2019-01-10
+### Changed
+- Minor documentation updates
+- Follow symlinks when finding files recursively
 
 ## [1.1.0] 2019-01-07
 ### Added
 - Generic single- and multi- read interface via `get_fast5_file`
+
 ### Fixed
 - Incorrect time estimates for single-multi conversion
 - Fixed path creation if not exist
@@ -16,6 +23,7 @@ This project (aspires to) adhere to [Semantic Versioning](http://semver.org/spec
 ### Added
 - Support for multi-read fast5 files
 - Conversion tools for single-multi read files
+
 ### Fixed
 - Support for deprecated interface to Basecall2D following 0.4.0, support will end in v1.x.x
 
