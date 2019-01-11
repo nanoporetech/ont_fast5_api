@@ -6,6 +6,13 @@ This project (aspires to) adhere to [Semantic Versioning](http://semver.org/spec
 
 ## Unreleased
 
+## [1.2.0] 2019-01-11
+### Added
+- Multi-threading support for multi<->single conversion for improved peformance
+
+### Fixed
+- Removed incorrect license accidentally added to README
+
 ## [1.1.1] 2019-01-10
 ### Changed
 - Minor documentation updates

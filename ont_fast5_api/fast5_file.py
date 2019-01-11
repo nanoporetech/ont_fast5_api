@@ -107,6 +107,8 @@ class Fast5File(AbstractFast5File):
         self.mode = mode
         self._initialise_file()
 
+    def get_run_id(self):
+        return self.handle[self.global_key + 'tracking_id'].attrs['run_id']
 
     def get_read_ids(self):
         return [self.get_read_id()]

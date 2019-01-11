@@ -1,12 +1,13 @@
 from __future__ import division
 
 try:
-    from unittest.mock import Mock, patch
+    from unittest.mock import patch
 except ImportError:  # python2 compatibility
-    from mock import Mock, patch
+    from mock import patch
 
-import h5py
+
 import os
+import h5py
 import shutil
 import unittest
 
@@ -29,8 +30,8 @@ class TestFast5Converter(unittest.TestCase):
         input_folder = os.path.join(test_data, "single_reads")
         batch_size = 3
         file_count = len(os.listdir(input_folder))
-        batch_convert_single_to_multi(input_folder, save_path, filename_base="batch", batch_size=batch_size,
-                                      recursive=False)
+        batch_convert_single_to_multi(input_folder, save_path, filename_base="batch", batch_size=batch_size, 
+                                      threads=1, recursive=False)
 
         expected_output_reads = {"filename_mapping.txt": 0,
                                  "batch_0.fast5": batch_size,
@@ -47,24 +48,12 @@ class TestFast5Converter(unittest.TestCase):
             read_count = len(f5.handle)
             expected_files = sorted([os.path.join(save_path, "{}", i + '.fast5') for i in f5.get_read_ids()])
 
-        # Large batch size should all be in a single folder
-        batch_size = 10
-        subfolder = 0
-        mock_pbar = Mock()
-        mock_pbar.currval = 0
-        convert_multi_to_single(input_file, save_path, batch_size=batch_size,
-                                pbar=mock_pbar, output_table=Mock())
+        subfolder = '0'
+        convert_multi_to_single(input_file, save_path, subfolder)
+
         out_files = sorted(get_fast5_file_list(save_path, recursive=True))
         self.assertEqual(len(out_files), read_count)
         self.assertEqual(out_files, [f.format(subfolder) for f in expected_files])
 
         # Small batch size should be split across multiple folders
         shutil.rmtree(save_path)
-        batch_size = 2
-        expected = [f.format(i // batch_size) for i, f in enumerate(expected_files)]
-        mock_pbar.currval = 0
-        convert_multi_to_single(input_file, save_path, batch_size=batch_size,
-                                pbar=mock_pbar, output_table=Mock())
-        out_files = sorted(get_fast5_file_list(save_path, recursive=True))
-        self.assertEqual(len(out_files), read_count)
-        self.assertEqual(out_files, expected)

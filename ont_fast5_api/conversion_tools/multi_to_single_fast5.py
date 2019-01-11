@@ -1,11 +1,13 @@
 from __future__ import division
 
 from argparse import ArgumentParser
-import h5py
+from multiprocessing import Pool
+from collections import deque
 import logging
+import h5py
 import os
 
-from ont_fast5_api import CURRENT_FAST5_VERSION
+from ont_fast5_api import CURRENT_FAST5_VERSION, __version__
 from ont_fast5_api.conversion_tools.conversion_utils import get_fast5_file_list, get_progress_bar
 from ont_fast5_api.fast5_file import Fast5File
 from ont_fast5_api.multi_fast5 import MultiFast5File
@@ -24,46 +26,51 @@ class EmptyFast5(Fast5File):
         self._is_open = True
 
 
-def count_reads(file_list):
-    count = 0
-    for filename in file_list:
-        with MultiFast5File(filename, 'r') as f5:
-            count += len(f5.get_read_ids())
-    return count
+def batch_convert_multi_files_to_single(input_path, output_folder, threads, recursive):
 
-
-def batch_convert_multi_files_to_single(input_path, output_folder, batch_size, recursive):
+    pool = Pool(threads)
     file_list = get_fast5_file_list(input_path, recursive)
-    pbar = get_progress_bar(count_reads(file_list))
+    pbar = get_progress_bar(len(file_list))
+
+    def update(results):
+        output_file = os.path.basename(results.popleft())
+        with open(os.path.join(output_folder, "filename_mapping.txt"), 'w') as output_table:
+            for filename in results:
+                output_table.write("{}\t{}\n".format(output_file, filename))
+        pbar.update(pbar.currval + 1)
+
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
+
     with open(os.path.join(output_folder, "filename_mapping.txt"), 'w') as output_table:
         output_table.write("multi_read_file\tsingle_read_file\n")
-        for filename in file_list:
-            convert_multi_to_single(filename, output_folder, batch_size, pbar, output_table)
+
+    for batch_num, filename in enumerate(file_list):
+        pool.apply_async(convert_multi_to_single, args=(filename, output_folder, str(batch_num)), callback=update)
+
+    pool.close()
+    pool.join()
     pbar.finish()
 
 
-def convert_multi_to_single(input_file, output_folder, batch_size, pbar, output_table):
-    count = pbar.currval
+def convert_multi_to_single(input_file, output_folder, subfolder):
+    results = deque([os.path.basename(input_file)])
     try:
         with MultiFast5File(input_file, 'r') as multi_f5:
             for read_id in multi_f5.get_read_ids():
                 try:
-                    subfolder = str(count // batch_size)
                     read = multi_f5.get_read(read_id)
                     output_file = os.path.join(output_folder, subfolder, "{}.fast5".format(read_id))
                     create_single_f5(output_file, read)
-                    output_table.write("{}\t{}\n".format(os.path.basename(input_file),
-                                                         os.path.basename(output_file)))
-                    count += 1
-                    pbar.update(count)
+                    results.append(os.path.basename(output_file))
                 except Exception as e:
                     logger.error("{}\n\tFailed to copy read '{}' from {}"
                                  "".format(str(e), read_id, input_file), exc_info=exc_info)
     except Exception as e:
         logger.error("{}\n\tFailed to copy files from: {}"
                      "".format(e, input_file), exc_info=exc_info)
+    finally:
+        return results
 
 
 def create_single_f5(output_file, read):
@@ -84,17 +91,18 @@ def create_single_f5(output_file, read):
 
 def main():
     parser = ArgumentParser("")
-    parser.add_argument('-i', '--input', required=True,
+    parser.add_argument('-i', '--input_path', required=True,
                         help="MultiRead fast5 file or path to directory of MultiRead files")
     parser.add_argument('-s', '--save_path', required=True,
                         help="Folder to output SingleRead fast5 files to")
-    parser.add_argument('-n', '--batch_size', type=int, default=4000, required=False,
-                        help="Number of reads per multi-read file")
     parser.add_argument('--recursive', action='store_true',
                         help="Search recursively through folders for for MultiRead fast5 files")
+    parser.add_argument('-t', '--threads', type=int, default=1, required=False,
+                        help="Number of threads to use")
+    parser.add_argument('-v', '--version', action='version', version=__version__)
     args = parser.parse_args()
 
-    batch_convert_multi_files_to_single(args.input, args.save_path, args.batch_size, args.recursive)
+    batch_convert_multi_files_to_single(args.input_path, args.save_path, args.threads, args.recursive)
 
 
 if __name__ == '__main__':

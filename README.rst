@@ -62,6 +62,7 @@ This script converts folders containing ``single_read_fast5`` files into
     single_to_multi_fast5
         -i, --input_path <(path) folder containing single_read_fast5 files>
         -s, --save_path <(path) to folder where multi_read fast5 files will be output>
+        [optional] -t, --threads <(int) number of CPU threads to use; default=1>
         [optional] -f, --filename_base <(string) name for new multi_read file; default="batch" (see note-1)>
         [optional] -n, --batch_size <(int) number of single_reads to include in each multi_read file; default=4000>
         [optional] --recursive <(bool) if included, rescursively search sub-directories for single_read files; default=False>
@@ -88,21 +89,17 @@ This script converts folders containing ``multi_read_fast5`` files into
     multi_to_single_fast5
         -i, --input_path <(path) folder containing multi_read_fast5 files>
         -s, --save_path <(path) to folder where single_read fast5 files will be output>
-        [optional] -n, --batch_size <(int) number of single_reads to include in each output folder; default=4000 (see note-2)>
+        [optional] -t, --threads <(int) number of CPU threads to use; default=1>
         [optional] --recursive <(bool) if included, rescursively search sub-directories for multi_read files; default=False>
-
-*note-2:* ``single_read`` fast5 files are batched into subdirectories for
-output for performance reasons
 
 **example usage**::
 
     multi_to_single_fast5 --input_path /data/multi_reads --save_path /data/single_reads
-        --batch_size 100 --recursive
+        --recursive
 
 Where ``/data/multi_reads`` and/or its subfolders contain ``multi_read``  fast5
-files. The output will be ``single_read`` fast5 files, in subfolders of the
-output_folder: ``/data/single_reads``, with each folder containing 100 fast5
-files.
+files. The output will be ``single_read`` fast5 files in the folder 
+``/data/single_reads`` with one subfolder per ``multi_read`` input file
 
 Glossary of Terms:
 ==============================================================================
@@ -117,18 +114,3 @@ single Oxford Nanopore read. This may include raw signal data, run metadata,
 fastq-basecalls and any other additional analyses
 **Multi read fast5** - A fast5 file containing data pertaining to a multiple
 Oxford Nanopore reads.
-
-Help
-==============================================================================
-
-Licence and Copyright:
-----------------------
-[c] 2018 Oxford Nanopore Technologies Ltd.
-
-``ont_fast5_api`` is distributed under the terms of the Oxford Nanopore Technologies Developer licence.
-Developer releases are provided to allow caveated access to source code and APIs for
-third-party tool development and exploration. Support is provided via this Github project and/or in
-the Community, here [https://community.nanoporetech.com/] and releases are accompanied by a release
-note at this website.
-
-
