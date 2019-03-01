@@ -21,24 +21,30 @@ def batch_convert_single_to_multi(input_path, output_folder, filename_base, batc
     pbar = get_progress_bar(int((len(file_list)+batch_size-1)/batch_size))
 
     def update(results):
-        output_file = os.path.basename(results.popleft())
-        with open(os.path.join(output_folder, "filename_mapping.txt"), 'w') as output_table:
-            for filename in results:
-                output_table.write("{}\t{}\n".format(filename, output_file))
         pbar.update(pbar.currval + 1)
 
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
-    with open(os.path.join(output_folder, "filename_mapping.txt"), 'w') as output_table:
-        output_table.write("single_read_file\tmulti_read_file\n")
-
+    results_array = []
     for batch_num, batch in enumerate(batcher(file_list, batch_size)):
         output_file = os.path.join(output_folder, "{}_{}.fast5".format(filename_base, batch_num))
-        pool.apply_async(create_multi_read_file, args=(batch, output_file), callback=update)
+        results_array.append(pool.apply_async(create_multi_read_file,
+                                              args=(batch, output_file),
+                                              callback=update))
 
     pool.close()
     pool.join()
+
+    with open(os.path.join(output_folder,
+                           "filename_mapping.txt"), 'w') as output_table:
+        output_table.write("single_read_file\tmulti_read_file\n")
+        for result_set in results_array:
+            results = result_set.get()
+            multi_read_file = results.popleft()
+            for single_read_file in results:
+                output_table.write("{}\t{}\n".format(single_read_file,
+                                                     multi_read_file))
     pbar.finish()
 
 

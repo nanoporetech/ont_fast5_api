@@ -33,23 +33,30 @@ def batch_convert_multi_files_to_single(input_path, output_folder, threads, recu
     pbar = get_progress_bar(len(file_list))
 
     def update(results):
-        output_file = os.path.basename(results.popleft())
-        with open(os.path.join(output_folder, "filename_mapping.txt"), 'w') as output_table:
-            for filename in results:
-                output_table.write("{}\t{}\n".format(output_file, filename))
         pbar.update(pbar.currval + 1)
 
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
-    with open(os.path.join(output_folder, "filename_mapping.txt"), 'w') as output_table:
-        output_table.write("multi_read_file\tsingle_read_file\n")
-
+    results_array = []
     for batch_num, filename in enumerate(file_list):
-        pool.apply_async(convert_multi_to_single, args=(filename, output_folder, str(batch_num)), callback=update)
+        results_array.append(pool.apply_async(convert_multi_to_single,
+                                              args=(filename, output_folder,
+                                                    str(batch_num)),
+                                              callback=update))
 
     pool.close()
     pool.join()
+
+    with open(os.path.join(output_folder,
+                           "filename_mapping.txt"), 'w') as output_table:
+        output_table.write("multi_read_file\tsingle_read_file\n")
+        for result_set in results_array:
+            results = result_set.get()
+            multi_read_file = results.popleft()
+            for single_read_file in results:
+                output_table.write("{}\t{}\n".format(multi_read_file,
+                                                     single_read_file))
     pbar.finish()
 
 
