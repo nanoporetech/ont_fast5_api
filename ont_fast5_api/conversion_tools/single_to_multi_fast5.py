@@ -21,6 +21,10 @@ def batch_convert_single_to_multi(input_path, output_folder, filename_base, batc
     pbar = get_progress_bar(int((len(file_list)+batch_size-1)/batch_size))
 
     def update(results):
+        output_file = os.path.basename(results.popleft())
+        with open(os.path.join(output_folder, "filename_mapping.txt"), 'a') as output_table:
+            for filename in results:
+                output_table.write("{}\t{}\n".format(filename, output_file))
         pbar.update(pbar.currval + 1)
 
     if not os.path.exists(output_folder):
