@@ -26,8 +26,9 @@ class EmptyFast5(Fast5File):
         self._is_open = True
 
 
-def batch_convert_multi_files_to_single(input_path, output_folder, threads, recursive):
+def batch_convert_multi_files_to_single(input_path, output_folder, readid_file, threads, recursive):
 
+    read_ids = set(l.strip() for l in readid_file)
     pool = Pool(threads)
     file_list = get_fast5_file_list(input_path, recursive)
     pbar = get_progress_bar(len(file_list))
@@ -41,7 +42,7 @@ def batch_convert_multi_files_to_single(input_path, output_folder, threads, recu
     results_array = []
     for batch_num, filename in enumerate(file_list):
         results_array.append(pool.apply_async(convert_multi_to_single,
-                                              args=(filename, output_folder,
+                                              args=(filename, output_folder, read_ids, 
                                                     str(batch_num)),
                                               callback=update))
 
@@ -60,11 +61,13 @@ def batch_convert_multi_files_to_single(input_path, output_folder, threads, recu
     pbar.finish()
 
 
-def convert_multi_to_single(input_file, output_folder, subfolder):
+def convert_multi_to_single(input_file, output_folder, read_ids, subfolder):
     results = deque([os.path.basename(input_file)])
     try:
         with MultiFast5File(input_file, 'r') as multi_f5:
             for read_id in multi_f5.get_read_ids():
+                if read_id not in read_ids:
+                    continue
                 try:
                     read = multi_f5.get_read(read_id)
                     output_file = os.path.join(output_folder, subfolder, "{}.fast5".format(read_id))
@@ -102,14 +105,16 @@ def main():
                         help="MultiRead fast5 file or path to directory of MultiRead files")
     parser.add_argument('-s', '--save_path', required=True,
                         help="Folder to output SingleRead fast5 files to")
-    parser.add_argument('--recursive', action='store_true',
+    parser.add_argument('-r', '--recursive', action='store_true',
                         help="Search recursively through folders for for MultiRead fast5 files")
+    parser.add_argument('-l', '--limit_by_read_ids', type=file, 
+                        help="Output only reads with ids in the file")
     parser.add_argument('-t', '--threads', type=int, default=1, required=False,
                         help="Number of threads to use")
     parser.add_argument('-v', '--version', action='version', version=__version__)
     args = parser.parse_args()
 
-    batch_convert_multi_files_to_single(args.input_path, args.save_path, args.threads, args.recursive)
+    batch_convert_multi_files_to_single(args.input_path, args.save_path, args.read_ids, args.threads, args.recursive)
 
 
 if __name__ == '__main__':
