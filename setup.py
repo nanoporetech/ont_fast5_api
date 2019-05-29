@@ -1,6 +1,7 @@
 import os
 import re
 from setuptools import setup, find_packages
+from sys import version_info
 
 __pkg_name__ = 'ont_fast5_api'
 
@@ -24,6 +25,8 @@ installation_requirements = []
 if 'IGNORE_INCLUDES' not in os.environ:
     installation_requirements = ['h5py>=2.2.1', 'numpy>=1.8.1',
                                  'six>=1.9', 'progressbar33>=2.3.1']
+if version_info.major == 2:
+    installation_requirements.append('pathlib2')
 
 setup(name=__pkg_name__.replace("_", "-"),
       author='Oxford Nanopore Technologies, Limited',
@@ -36,7 +39,8 @@ setup(name=__pkg_name__.replace("_", "-"),
       packages=find_packages(),
       entry_points={'console_scripts': [
           "multi_to_single_fast5={}.conversion_tools.multi_to_single_fast5:main".format(__pkg_name__),
-          "single_to_multi_fast5={}.conversion_tools.single_to_multi_fast5:main".format(__pkg_name__)
+          "single_to_multi_fast5={}.conversion_tools.single_to_multi_fast5:main".format(__pkg_name__),
+          "fast5_subset={}.conversion_tools.multi_fast5_subset:main".format(__pkg_name__)
       ]},
       classifiers=[
           'Development Status :: 5 - Production/Stable',

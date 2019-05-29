@@ -4,11 +4,17 @@ All notable changes and fixes to ont_fast5_api will be documented here
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 This project (aspires to) adhere to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [1.4.0] 2019-05-29
+### Added
+- Script for extracting reads by id from `multi_read` files
+
+## [1.3.0] 2019-03-01
+### Fixed
+- Bug in output to `filename_mapping.txt`
 
 ## [1.2.0] 2019-01-11
 ### Added
-- Multi-threading support for multi<->single conversion for improved peformance
+- Multi-threading support for multi<->single conversion for improved performance
 
 ### Fixed
 - Removed incorrect license accidentally added to README

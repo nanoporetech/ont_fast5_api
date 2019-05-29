@@ -34,6 +34,10 @@ def batch_convert_multi_files_to_single(input_path, output_folder, readid_file, 
     pbar = get_progress_bar(len(file_list))
 
     def update(results):
+        output_file = os.path.basename(results.popleft())
+        with open(os.path.join(output_folder, "filename_mapping.txt"), 'a') as output_table:
+            for filename in results:
+                output_table.write("{}\t{}\n".format(output_file, filename))
         pbar.update(pbar.currval + 1)
 
     if not os.path.exists(output_folder):

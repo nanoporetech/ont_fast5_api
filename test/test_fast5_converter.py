@@ -13,7 +13,7 @@ import unittest
 
 from ont_fast5_api.conversion_tools.multi_to_single_fast5 import convert_multi_to_single
 from ont_fast5_api.conversion_tools.single_to_multi_fast5 import batch_convert_single_to_multi, get_fast5_file_list
-from ont_fast5_api.multi_fast5 import MultiFast5File
+from ont_fast5_api.conversion_tools.multi_fast5_subset import MultiFast5File
 
 test_data = os.path.join(os.path.dirname(__file__), 'data')
 save_path = os.path.join(os.path.dirname(__file__), 'tmp')
