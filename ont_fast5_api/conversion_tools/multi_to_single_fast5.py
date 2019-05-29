@@ -118,7 +118,8 @@ def main():
     parser.add_argument('-v', '--version', action='version', version=__version__)
     args = parser.parse_args()
 
-    batch_convert_multi_files_to_single(args.input_path, args.save_path, args.read_ids, args.threads, args.recursive)
+    batch_convert_multi_files_to_single(args.input_path, args.save_path, args.limit_by_read_ids,
+                                        args.threads, args.recursive)
 
 
 if __name__ == '__main__':
