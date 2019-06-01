@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 exc_info = False
 
 
-def batch_convert_single_to_multi(input_path, output_folder, filename_base, batch_size, threads, recursive):
+def batch_convert_single_to_multi(input_path, output_folder, filename_base, batch_size, threads, recursive, revert):
 
     pool = Pool(threads)
     file_list = get_fast5_file_list(input_path, recursive)
@@ -114,7 +114,7 @@ def main():
     parser.add_argument('-v', '--version', action='version', version=__version__)
     args = parser.parse_args()
 
-    batch_convert_single_to_multi(args.input_path, args.save_path, args.filename_base, args.batch_size, args.threads, args.recursive)
+    batch_convert_single_to_multi(args.input_path, args.save_path, args.filename_base, args.batch_size, args.threads, args.recursive, args.revert)
 
 
 if __name__ == '__main__':
