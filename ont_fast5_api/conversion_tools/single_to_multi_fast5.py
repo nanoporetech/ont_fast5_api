@@ -87,10 +87,14 @@ def add_read_to_multi_fast5(multi_f5, single_f5, revert=False):
     # Copy UniqueGlobalKey data into new file
     for group in single_f5.handle["UniqueGlobalKey"]:
         read.handle.copy(single_f5.handle["UniqueGlobalKey/{}".format(group)], group)
-
+        
+    if not revert:
+        # Skip any additional entries if revert
+        return
+        
     for group in single_f5.handle:
-        if group in ("Raw", "UniqueGlobalKey") or revert:
-            # Skip these as they require special handling OR if reverting to raw reads
+        if group in ("Raw", "UniqueGlobalKey"):
+            # Skip these as they require special handling
             continue
         read.handle.copy(single_f5.handle[group], group)
 
