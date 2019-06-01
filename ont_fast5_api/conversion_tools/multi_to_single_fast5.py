@@ -28,7 +28,9 @@ class EmptyFast5(Fast5File):
 
 def batch_convert_multi_files_to_single(input_path, output_folder, readid_file, threads, recursive):
 
-    read_ids = set(l.strip() for l in readid_file)
+    read_ids = set()
+    if readid_file:
+        read_ids = set(l.strip() for l in readid_file)
     pool = Pool(threads)
     file_list = get_fast5_file_list(input_path, recursive)
     pbar = get_progress_bar(len(file_list))
@@ -70,7 +72,7 @@ def convert_multi_to_single(input_file, output_folder, read_ids, subfolder):
     try:
         with MultiFast5File(input_file, 'r') as multi_f5:
             for read_id in multi_f5.get_read_ids():
-                if read_id not in read_ids:
+                if read_ids and read_id not in read_ids:
                     continue
                 try:
                     read = multi_f5.get_read(read_id)

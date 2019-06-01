@@ -34,7 +34,7 @@ def batch_convert_single_to_multi(input_path, output_folder, filename_base, batc
     for batch_num, batch in enumerate(batcher(file_list, batch_size)):
         output_file = os.path.join(output_folder, "{}_{}.fast5".format(filename_base, batch_num))
         results_array.append(pool.apply_async(create_multi_read_file,
-                                              args=(batch, output_file),
+                                              args=(batch, output_file, revert),
                                               callback=update))
 
     pool.close()
@@ -52,7 +52,7 @@ def batch_convert_single_to_multi(input_path, output_folder, filename_base, batc
     pbar.finish()
 
 
-def create_multi_read_file(input_files, output_file):
+def create_multi_read_file(input_files, output_file, revert=False):
     results = deque([os.path.basename(output_file)])
     if not os.path.exists(os.path.dirname(output_file)):
         os.makedirs(os.path.dirname(output_file))
@@ -63,7 +63,7 @@ def create_multi_read_file(input_files, output_file):
             for filename in input_files:
                 try:
                     with Fast5File(filename, 'r') as single_f5:
-                        add_read_to_multi_fast5(multi_f5, single_f5)
+                        add_read_to_multi_fast5(multi_f5, single_f5, revert)
                         results.append(os.path.basename(filename))
                 except Exception as e:
                     logger.error("{}\n\tFailed to add single read file: '{}' to '{}'"
@@ -75,7 +75,7 @@ def create_multi_read_file(input_files, output_file):
         return results
 
 
-def add_read_to_multi_fast5(multi_f5, single_f5):
+def add_read_to_multi_fast5(multi_f5, single_f5, revert=False):
     read_number = single_f5._get_only_read_number()
     read_id = single_f5.get_read_id()
     run_id = single_f5.get_run_id()
@@ -89,8 +89,8 @@ def add_read_to_multi_fast5(multi_f5, single_f5):
         read.handle.copy(single_f5.handle["UniqueGlobalKey/{}".format(group)], group)
 
     for group in single_f5.handle:
-        if group in ("Raw", "UniqueGlobalKey"):
-            # Skip these as they require special handling
+        if group in ("Raw", "UniqueGlobalKey") or revert:
+            # Skip these as they require special handling OR if reverting to raw reads
             continue
         read.handle.copy(single_f5.handle[group], group)
 
@@ -107,8 +107,10 @@ def main():
                         help="Number of reads per multi-read file")
     parser.add_argument('-t', '--threads', type=int, default=1, required=False,
                         help="Number of threads to use")
-    parser.add_argument('--recursive', action='store_true',
+    parser.add_argument('-r', '--recursive', action='store_true',
                         help="Search recursively through folders for for single_read fast5 files")
+    parser.add_argument('--revert', action='store_true',
+                        help="Revert Fast5 to original content. This will drop basecalling and other analyses.")
     parser.add_argument('-v', '--version', action='version', version=__version__)
     args = parser.parse_args()
 
