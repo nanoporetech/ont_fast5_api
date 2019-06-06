@@ -51,16 +51,6 @@ def batch_convert_multi_files_to_single(input_path, output_folder, threads, recu
 
     pool.close()
     pool.join()
-
-    with open(os.path.join(output_folder,
-                           "filename_mapping.txt"), 'w') as output_table:
-        output_table.write("multi_read_file\tsingle_read_file\n")
-        for result_set in results_array:
-            results = result_set.get()
-            multi_read_file = results.popleft()
-            for single_read_file in results:
-                output_table.write("{}\t{}\n".format(multi_read_file,
-                                                     single_read_file))
     pbar.finish()
 
 

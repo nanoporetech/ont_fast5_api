@@ -39,16 +39,6 @@ def batch_convert_single_to_multi(input_path, output_folder, filename_base, batc
 
     pool.close()
     pool.join()
-
-    with open(os.path.join(output_folder,
-                           "filename_mapping.txt"), 'w') as output_table:
-        output_table.write("single_read_file\tmulti_read_file\n")
-        for result_set in results_array:
-            results = result_set.get()
-            multi_read_file = results.popleft()
-            for single_read_file in results:
-                output_table.write("{}\t{}\n".format(single_read_file,
-                                                     multi_read_file))
     pbar.finish()
 
 

@@ -4,6 +4,12 @@ All notable changes and fixes to ont_fast5_api will be documented here
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 This project (aspires to) adhere to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.4.1] 2019-06-06
+### Added
+- Useful error message if no input files found
+### Fixed
+- filename_mapping output gave incorrect filenames
+
 ## [1.4.0] 2019-05-29
 ### Added
 - Script for extracting reads by id from `multi_read` files

@@ -45,6 +45,12 @@ class Fast5Filter:
         self.read_set = get_filter_reads(read_list_file)
         self.input_f5s = get_fast5_file_list(str(input_folder), recursive)
 
+        if len(self.read_set) < 1:
+            raise ValueError("No reads in read list file {}".format(read_list_file))
+
+        if len(self.input_f5s) < 1:
+            raise ValueError("No input fast5 files found in {}. Recursion is set to {}".format(str(input_folder), recursive))
+
         if file_list_file:
             file_set = get_filter_reads(file_list_file)
             for file in file_set:
@@ -276,7 +282,7 @@ def main():
                         help="Number of reads per multi-read file")
     parser.add_argument('-t', '--threads', type=int, default=1, required=False,
                         help="Number of threads to use")
-    parser.add_argument('--recursive', action='store_true', required=False,
+    parser.add_argument('-r', '--recursive', action='store_true', required=False, default=False,
                         help="Search recursively through folders for for MultiRead fast5 files")
     parser.add_argument('--file_list', required=False,
                         help="File containing names of files to search in")
