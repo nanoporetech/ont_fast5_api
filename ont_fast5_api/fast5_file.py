@@ -687,8 +687,8 @@ class Fast5File(AbstractFast5File):
             parange = channel_info['range']
             offset = channel_info['offset']
             scaling = parange / digi
-            data = np.empty(end - start, dtype=np.float32)
-            data[:] = scaling * (raw[start:end] + offset)
+            # python slice syntax allows None, https://docs.python.org/3/library/functions.html#slice
+            data = np.array(scaling * (raw[start:end] + offset), dtype=np.float32)
         else:
             data = raw[start:end]
         return data
