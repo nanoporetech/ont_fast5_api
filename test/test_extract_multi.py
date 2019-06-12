@@ -1,16 +1,13 @@
 from tempfile import _get_candidate_names, mkdtemp
 from ont_fast5_api.conversion_tools.multi_fast5_subset import Fast5Filter, read_generator, extract_selected_reads
 import unittest
-
-try:
-    from pathlib import Path
-except ImportError:
-    from pathlib2 import Path
+from os import path, unlink
+from glob import glob
 
 
 class ExtractMultiTest(unittest.TestCase):
     def setUp(self):
-        self.multifast5 = Path(__file__).parent / "data" / "multi_read" / "batch_0.fast5"
+        self.multifast5 = path.join(path.dirname(__file__), "data", "multi_read", "batch_0.fast5")
         self.read_set = {"568b93db", "9171d66b"}
 
     def test_read_generator(self):
@@ -42,16 +39,16 @@ class ExtractMultiTest(unittest.TestCase):
                 assert input_file is None
 
             assert output_file == temp_file_name
-            Path(temp_file_name).unlink()
+            unlink(temp_file_name)
 
     def test_selector_args_generator(self):
 
         test_read_set = {item for item in self.read_set}  # copy to be modified
-        base_path = Path(__file__).parent
-        single_reads = base_path / "data" / "single_reads"
+        base_path = path.dirname(__file__)
+        single_reads = path.join(base_path, "data", "single_reads")
+        assert path.isdir(single_reads), single_reads
 
-        input_f5s = list(single_reads.glob('*'))
-        assert single_reads.is_dir(), single_reads
+        input_f5s = glob(path.join(single_reads, '*.fast5'))  #list(single_reads.glob('*'))
         batch_size = 1
 
         # create mock read id list file
@@ -86,8 +83,8 @@ class ExtractMultiTest(unittest.TestCase):
             # this results in another args tuple generated
             new_args_combos = list(f._args_generator())
             assert len(new_args_combos) == 1, len(new_args_combos)
-            Path(temp_file_name).unlink()
+            unlink(temp_file_name)
 
         except Exception as e:
-            Path(temp_file_name).unlink()
+            unlink(temp_file_name)
             raise

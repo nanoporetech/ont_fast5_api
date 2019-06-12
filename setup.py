@@ -25,8 +25,6 @@ installation_requirements = []
 if 'IGNORE_INCLUDES' not in os.environ:
     installation_requirements = ['h5py>=2.2.1', 'numpy>=1.8.1',
                                  'six>=1.9', 'progressbar33>=2.3.1']
-if version_info.major == 2:
-    installation_requirements.append('pathlib2')
 
 setup(name=__pkg_name__.replace("_", "-"),
       author='Oxford Nanopore Technologies, Limited',

@@ -6,11 +6,7 @@ from argparse import ArgumentParser
 from time import sleep
 import logging
 import csv
-
-try:
-    from pathlib import Path
-except ImportError:
-    from pathlib2 import Path
+from os import path, mkdir, unlink
 
 from ont_fast5_api.multi_fast5 import MultiFast5File
 from ont_fast5_api.conversion_tools.conversion_utils import get_fast5_file_list, get_progress_bar
@@ -34,8 +30,8 @@ class Fast5Filter:
     """
     def __init__(self, input_folder, output_folder, read_list_file, filename_base,
                  batch_size=4000, threads=1, recursive=False, file_list_file=None):
-        assert Path(input_folder).is_dir()
-        assert Path(read_list_file).is_file()
+        assert path.isdir(input_folder)
+        assert path.isfile(read_list_file)
         assert isinstance(filename_base, str)
         assert isinstance(batch_size, int)
         assert isinstance(threads, int)
@@ -54,7 +50,7 @@ class Fast5Filter:
         if file_list_file:
             file_set = get_filter_reads(file_list_file)
             for file in file_set:
-                assert Path(file).exists(), "{} from file list doesn't exist".format(file)
+                assert path.exists(file), "{} from file list doesn't exist".format(file)
             self.input_f5s = list(file_set.intersection(self.input_f5s))
 
         # determine max number of workers
@@ -62,14 +58,13 @@ class Fast5Filter:
         num_outputs = int(ceil(len(self.read_set) / batch_size))
         self.num_workers = min(threads, min(num_outputs, len(self.input_f5s)))
 
-        out_basename = Path(output_folder)
-        if not out_basename.exists():
-            out_basename.mkdir()
+        if not path.exists(output_folder):
+            mkdir(output_folder)
 
-        self.filename_mapping_file = out_basename / "filename_mapping.txt"
-        if self.filename_mapping_file.exists():
+        self.filename_mapping_file = path.join(output_folder, "filename_mapping.txt")
+        if path.exists(self.filename_mapping_file):
             self.logger.info("overwriting filename mapping file {}".format(self.filename_mapping_file))
-            self.filename_mapping_file.unlink()
+            unlink(self.filename_mapping_file)
 
         # dict where key=filename value=read_set
         self.out_files = {}
@@ -77,11 +72,11 @@ class Fast5Filter:
         out_file_names = []
         for i in range(num_outputs):
             filename = filename_base + str(i) + ".fast5"
-            output_file_name = out_basename / filename
+            output_file_name = path.join(output_folder, filename)
 
-            if output_file_name.exists():
+            if path.exists(output_file_name):
                 self.logger.info("overwriting multiread file {}".format(output_file_name))
-                output_file_name.unlink()
+                unlink(output_file_name)
 
             self.out_files[output_file_name] = set()
             out_file_names.append(output_file_name)
