@@ -9,15 +9,27 @@ def batcher(iterable, n=1):
         yield iterable[ndx:min(ndx + n, l)]
 
 
-def get_fast5_file_list(input_path, recursive):
+def yield_fast5_files(input_path, recursive):
     if os.path.isfile(input_path):
-        return [input_path]
+        yield input_path
+        return
+
     if recursive:
-        file_list = [y for x in os.walk(input_path, followlinks=True)
-                     for y in glob(os.path.join(x[0], '*.fast5'))]
+        for root, _, filenames in os.walk(input_path, followlinks=True):
+            for filename in filenames:
+                if not filename.endswith('.fast5'): continue
+                yield os.path.join(root, filename)
     else:
-        file_list = [i for i in glob(os.path.join(input_path, '*.fast5'))]
-    return file_list
+        for filename in glob(os.path.join(input_path, '*.fast5')):
+            yield filename
+    return
+
+
+def get_fast5_file_list(input_path, recursive):
+    # NB this method is provided for compatibility with use cases where
+    # generator behaviour is not appropriate.
+    # E.g. where we need to know the file_list length or be able to sample from it
+    return list(yield_fast5_files(input_path, recursive))
 
 
 def get_progress_bar(num_reads):

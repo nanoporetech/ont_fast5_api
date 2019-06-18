@@ -168,7 +168,7 @@ class Fast5Filter:
         # print filename - read table
         with open(str(self.filename_mapping_file), 'a') as output_table:
             for read in reads:
-                output_table.write("{}\t{}\n".format(read, out_file.name))
+                output_table.write("{}\t{}\n".format(read, path.basename(out_file)))
 
         # increment progressbar by number of reads found and by number of files processed
         self.pbar.update(self.pbar.currval + len(reads) + in_file_exhausted)

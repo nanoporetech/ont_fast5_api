@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 This project (aspires to) adhere to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
+## [1.4.4] 2019-06-18
+### Fixed
+- Bug in path name output fro pathlib changes
+
 ## [1.4.3] 2019-06-12
 ### Fixed
 - Bug with apt-install and pathlib2
