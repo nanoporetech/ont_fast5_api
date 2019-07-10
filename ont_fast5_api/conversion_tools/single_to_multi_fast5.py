@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 exc_info = False
 
 
-def batch_convert_single_to_multi(input_path, output_folder, filename_base, batch_size, threads, recursive):
+def batch_convert_single_to_multi(input_path, output_folder, filename_base, batch_size, threads, recursive, skip_analyses):
 
     pool = Pool(threads)
     file_list = get_fast5_file_list(input_path, recursive)
@@ -34,7 +34,7 @@ def batch_convert_single_to_multi(input_path, output_folder, filename_base, batc
     for batch_num, batch in enumerate(batcher(file_list, batch_size)):
         output_file = os.path.join(output_folder, "{}_{}.fast5".format(filename_base, batch_num))
         results_array.append(pool.apply_async(create_multi_read_file,
-                                              args=(batch, output_file),
+                                              args=(batch, output_file, skip_analyses),
                                               callback=update))
 
     pool.close()
@@ -42,7 +42,7 @@ def batch_convert_single_to_multi(input_path, output_folder, filename_base, batc
     pbar.finish()
 
 
-def create_multi_read_file(input_files, output_file):
+def create_multi_read_file(input_files, output_file, skip_analyses):
     results = deque([os.path.basename(output_file)])
     if not os.path.exists(os.path.dirname(output_file)):
         os.makedirs(os.path.dirname(output_file))
@@ -53,7 +53,7 @@ def create_multi_read_file(input_files, output_file):
             for filename in input_files:
                 try:
                     with Fast5File(filename, 'r') as single_f5:
-                        add_read_to_multi_fast5(multi_f5, single_f5)
+                        add_read_to_multi_fast5(multi_f5, single_f5, skip_analyses)
                         results.append(os.path.basename(filename))
                 except Exception as e:
                     logger.error("{}\n\tFailed to add single read file: '{}' to '{}'"
@@ -65,7 +65,7 @@ def create_multi_read_file(input_files, output_file):
         return results
 
 
-def add_read_to_multi_fast5(multi_f5, single_f5):
+def add_read_to_multi_fast5(multi_f5, single_f5, skip_analyses):
     read_number = single_f5._get_only_read_number()
     read_id = single_f5.get_read_id()
     run_id = single_f5.get_run_id()
@@ -79,7 +79,7 @@ def add_read_to_multi_fast5(multi_f5, single_f5):
         read.handle.copy(single_f5.handle["UniqueGlobalKey/{}".format(group)], group)
 
     for group in single_f5.handle:
-        if group in ("Raw", "UniqueGlobalKey"):
+        if group in ("Raw", "UniqueGlobalKey") or skip_analyses and group == "Analyses":
             # Skip these as they require special handling
             continue
         read.handle.copy(single_f5.handle[group], group)
@@ -99,10 +99,12 @@ def main():
                         help="Number of threads to use")
     parser.add_argument('--recursive', action='store_true',
                         help="Search recursively through folders for for single_read fast5 files")
+    parser.add_argument('--skip_analyses', action='store_true',
+                        help="Skip basecalling analyses during conversion")
     parser.add_argument('-v', '--version', action='version', version=__version__)
     args = parser.parse_args()
 
-    batch_convert_single_to_multi(args.input_path, args.save_path, args.filename_base, args.batch_size, args.threads, args.recursive)
+    batch_convert_single_to_multi(args.input_path, args.save_path, args.filename_base, args.batch_size, args.threads, args.recursive, args.skip_analyses)
 
 
 if __name__ == '__main__':
