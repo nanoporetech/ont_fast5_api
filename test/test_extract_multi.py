@@ -1,5 +1,6 @@
 from tempfile import _get_candidate_names, mkdtemp
-from ont_fast5_api.conversion_tools.multi_fast5_subset import Fast5Filter, read_generator, extract_selected_reads
+from ont_fast5_api.conversion_tools.fast5_subset import Fast5Filter, read_generator, extract_selected_reads
+from ont_fast5_api.multi_fast5 import MultiFast5File
 import unittest
 from os import path, unlink
 from glob import glob
@@ -39,6 +40,13 @@ class ExtractMultiTest(unittest.TestCase):
                 assert input_file is None
 
             assert output_file == temp_file_name
+            # verify that resulting output file is a legal MultiFast5 with desired reads in it
+            with MultiFast5File(output_file) as multi_file:
+                readlist = multi_file.get_read_ids()
+                assert len(readlist) > 0
+                for read in readlist:
+                    assert read in test_read_set
+
             unlink(temp_file_name)
 
     def test_selector_args_generator(self):

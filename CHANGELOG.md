@@ -5,9 +5,23 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 This project (aspires to) adhere to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
+## [1.4.7] 2019-07-29
+### Fixed
+- Bug in read string and read_id concatenation resulted in broken output file
+
+## [1.4.6] 2019-07-03
+### Added
+- Updated fast5_subset script to extract also from single-read fast5 files
+### Changed
+- Renamed fast5_subset source script from multi_fast5_subset.py to fast5_subset.py
+
+## [1.4.5] 2019-07-01
+### Fixed
+- Bug in number of processes being 0 when batch size is greater than number of reads (py2)
+
 ## [1.4.4] 2019-06-18
 ### Fixed
-- Bug in path name output fro pathlib changes
+- Bug in path name output from pathlib changes
 
 ## [1.4.3] 2019-06-12
 ### Fixed

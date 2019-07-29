@@ -1,4 +1,4 @@
-"""Filter multi Fast5 files based on read_id list
+"""Filter Fast5 files based on read_id list
 """
 from multiprocessing import Pool
 from math import ceil
@@ -9,8 +9,11 @@ import csv
 from os import path, mkdir, unlink
 
 from ont_fast5_api.multi_fast5 import MultiFast5File
+from ont_fast5_api.fast5_read import Fast5Read
+from ont_fast5_api.fast5_file import Fast5File
+from ont_fast5_api.conversion_tools.single_to_multi_fast5 import add_read_to_multi_fast5 as copy_read_from_single
 from ont_fast5_api.conversion_tools.conversion_utils import get_fast5_file_list, get_progress_bar
-from ont_fast5_api.fast5_interface import is_multi_read
+from ont_fast5_api.fast5_interface import get_fast5_file
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -18,11 +21,11 @@ logging.basicConfig(level=logging.DEBUG)
 
 class Fast5Filter:
     """
-    Extract reads listed read_list_file from multi-fast5 files in input_folder, write to multi-fast5 files in
+    Extract reads listed read_list_file from fast5 files in input_folder, write to multi-fast5 files in
     output_folder
     Max number of output files is calculated from length of read_list divided by batch_size
     Every worker receives a single input and single output file (and full set of read_ids to extract)
-    If input file is exhausted
+    If input file is not exhausted before output file has reached batch_size limit, it is given to next worker.
 
     Single-process case:
       Is triggered if threads is set to 1 or there is only a single input file or number of reads in read_list_file
@@ -47,6 +50,12 @@ class Fast5Filter:
         if len(self.input_f5s) < 1:
             raise ValueError("No input fast5 files found in {}. Recursion is set to {}".format(str(input_folder), recursive))
 
+        if batch_size < 1:
+            raise ValueError("Batch size (--batch_size) must be a positive integer, not {}".format(batch_size))
+
+        if threads < 1:
+            raise ValueError("Max number of threads (--threads) must be a positive integer, not {}".format(threads))
+
         if file_list_file:
             file_set = get_filter_reads(file_list_file)
             for file in file_set:
@@ -55,7 +64,7 @@ class Fast5Filter:
 
         # determine max number of workers
         self.batch_size = batch_size
-        num_outputs = int(ceil(len(self.read_set) / batch_size))
+        num_outputs = int(ceil(len(self.read_set) / float(batch_size)))
         self.num_workers = min(threads, min(num_outputs, len(self.input_f5s)))
 
         if not path.exists(output_folder):
@@ -231,12 +240,12 @@ def extract_selected_reads(input_file, output_file, read_set, count):
         reads_present = set(output_f5.get_read_ids())
         for read, group in read_generator(input_file, read_set):
             found_reads.add(read)
-            read_name = "read_" + read
 
-            if read_name in reads_present:
+            if read in reads_present:
                 continue
 
-            output_f5.handle.copy(group, read_name)
+            copy_read_to_multi_fast5(group, output_f5)
+
             reads_present.add(read)
 
             if len(found_reads) >= count:
@@ -252,21 +261,36 @@ def read_generator(input_file, read_set):
     :param read_set:
     :return:
     """
-
-    with MultiFast5File(str(input_file), 'r') as input_f5:
+    with get_fast5_file(str(input_file)) as input_f5:
         read_ids = input_f5.get_read_ids()
-        if len(read_ids) == 0:
-            if not is_multi_read(input_file):
-                raise TypeError("Filtering from single-read Fast5 not supported")
+
         for read in read_set.intersection(read_ids):
-            group = input_f5.handle["read_" + read]
+            group = input_f5.get_read(read)
+
             yield read, group
+
+
+def copy_read_to_multi_fast5(group, output_f5):
+    if isinstance(group, Fast5Read):
+        copy_read_from_multi(multi_f5=output_f5, source=group)
+    elif isinstance(group, Fast5File):
+        copy_read_from_single(multi_f5=output_f5, single_f5=group)
+    else:
+        raise TypeError("Group type {} can't be copied".format(type(group)))
+
+
+def copy_read_from_multi(multi_f5, source):
+    assert isinstance(source, Fast5Read)
+    assert isinstance(multi_f5, MultiFast5File)
+    read_name = "read_" + source.get_read_id()
+    group = source.handle
+    multi_f5.handle.copy(group, read_name)
 
 
 def main():
     parser = ArgumentParser("Tool for extracting reads from a multi_read_fast5_file by read_id")
     parser.add_argument('-i', '--input', required=True,
-                        help="MultiRead fast5 file or path to directory of MultiRead files")
+                        help="Path to Fast5 file or directory of Fast5 files")
     parser.add_argument('-s', '--save_path', required=True,
                         help="Folder to output MultiRead subset to")
     parser.add_argument('-l', '--read_id_list', required=True,
@@ -276,18 +300,18 @@ def main():
     parser.add_argument('-n', '--batch_size', type=int, default=4000, required=False,
                         help="Number of reads per multi-read file")
     parser.add_argument('-t', '--threads', type=int, default=1, required=False,
-                        help="Number of threads to use")
+                        help="Maximum number of threads to use")
     parser.add_argument('-r', '--recursive', action='store_true', required=False, default=False,
                         help="Search recursively through folders for for MultiRead fast5 files")
     parser.add_argument('--file_list', required=False,
                         help="File containing names of files to search in")
     args = parser.parse_args()
 
-    mulitfilter = Fast5Filter(input_folder=args.input, output_folder=args.save_path, filename_base=args.filename_base,
+    multifilter = Fast5Filter(input_folder=args.input, output_folder=args.save_path, filename_base=args.filename_base,
                               read_list_file=args.read_id_list, batch_size=args.batch_size, threads=args.threads,
                               recursive=args.recursive, file_list_file=args.file_list)
 
-    mulitfilter.run_batch()
+    multifilter.run_batch()
 
 
 if __name__ == '__main__':
