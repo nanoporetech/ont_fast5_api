@@ -98,7 +98,7 @@ def main():
     parser.add_argument('-t', '--threads', type=int, default=1, required=False,
                         help="Number of threads to use")
     parser.add_argument('--recursive', action='store_true',
-                        help="Search recursively through folders for for single_read fast5 files")
+                        help="Search recursively through folders for single_read fast5 files")
     parser.add_argument('-v', '--version', action='version', version=__version__)
     args = parser.parse_args()
 

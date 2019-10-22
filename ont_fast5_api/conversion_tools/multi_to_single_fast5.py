@@ -97,7 +97,7 @@ def main():
     parser.add_argument('-s', '--save_path', required=True,
                         help="Folder to output SingleRead fast5 files to")
     parser.add_argument('--recursive', action='store_true',
-                        help="Search recursively through folders for for MultiRead fast5 files")
+                        help="Search recursively through folders for MultiRead fast5 files")
     parser.add_argument('-t', '--threads', type=int, default=1, required=False,
                         help="Number of threads to use")
     parser.add_argument('-v', '--version', action='version', version=__version__)

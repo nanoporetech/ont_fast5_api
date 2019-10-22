@@ -302,7 +302,7 @@ def main():
     parser.add_argument('-t', '--threads', type=int, default=1, required=False,
                         help="Maximum number of threads to use")
     parser.add_argument('-r', '--recursive', action='store_true', required=False, default=False,
-                        help="Search recursively through folders for for MultiRead fast5 files")
+                        help="Search recursively through folders for MultiRead fast5 files")
     parser.add_argument('--file_list', required=False,
                         help="File containing names of files to search in")
     args = parser.parse_args()

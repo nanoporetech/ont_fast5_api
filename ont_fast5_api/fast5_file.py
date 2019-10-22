@@ -771,6 +771,9 @@ def _sanitize_data_for_writing(data):
         elif isinstance(data, np.ndarray) and len(data.dtype) > 1:
             dtypes = data.dtype.descr
             for index, entry in enumerate(dtypes):
+                if type(entry[1]) is tuple:
+                    # Handle h5py>=2.10 where type includes encoding e.g. ("|S32", {'h5py_encoding': 'ascii'})
+                    entry = (entry[0], entry[1][0])
                 if entry[1].startswith('<U'):
                     # numpy.astype can't handle empty string datafields for some
                     # reason, so we'll explicitly state that.
@@ -793,6 +796,9 @@ def _sanitize_data_for_reading(data):
         elif isinstance(data, np.ndarray) and len(data.dtype) > 1:
             dtypes = data.dtype.descr
             for index, entry in enumerate(dtypes):
+                if type(entry[1]) is tuple:
+                    # Handle h5py>=2.10 where type includes encoding e.g. ("|S32", {'h5py_encoding': 'ascii'})
+                    entry = (entry[0], entry[1][0])
                 if entry[1].startswith('|S'):
                     # numpy.astype can't handle empty datafields for some
                     # reason, so we'll explicitly state that.
