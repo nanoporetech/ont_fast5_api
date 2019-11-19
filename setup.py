@@ -1,7 +1,7 @@
 import os
 import re
+import sys
 from setuptools import setup, find_packages
-from sys import version_info
 
 __pkg_name__ = 'ont_fast5_api'
 
@@ -23,22 +23,26 @@ with open('README.rst') as readme:
 
 installation_requirements = []
 if 'IGNORE_INCLUDES' not in os.environ:
-    installation_requirements = ['h5py>=2.2.1', 'numpy>=1.8.1',
-                                 'six>=1.9', 'progressbar33>=2.3.1']
+    installation_requirements = ['h5py>=2.6', 'numpy>=1.11',
+                                 'six>=1.10', 'progressbar33>=2.3.1']
+    if sys.version_info.major == 2:
+        installation_requirements.append('mock==2.0.0')
 
 setup(name=__pkg_name__.replace("_", "-"),
       author='Oxford Nanopore Technologies, Limited',
       description='Oxford Nanopore Technologies fast5 API software',
+      license='MPL 2.0',
       long_description=documentation,
       version=get_version(),
       url='https://github.com/nanoporetech/{}'.format(__pkg_name__),
       install_requires=installation_requirements,
-      license='MPL 2.0',
       packages=find_packages(),
+      package_data={__pkg_name__: ['vbz_plugin/*.so', 'vbz_plugin/*.dylib', 'vbz_plugin/*.dll']},
       entry_points={'console_scripts': [
           "multi_to_single_fast5={}.conversion_tools.multi_to_single_fast5:main".format(__pkg_name__),
           "single_to_multi_fast5={}.conversion_tools.single_to_multi_fast5:main".format(__pkg_name__),
-          "fast5_subset={}.conversion_tools.fast5_subset:main".format(__pkg_name__)
+          "fast5_subset={}.conversion_tools.fast5_subset:main".format(__pkg_name__),
+          "compress_fast5={}.conversion_tools.compress_fast5:main".format(__pkg_name__),
       ]},
       classifiers=[
           'Development Status :: 5 - Production/Stable',

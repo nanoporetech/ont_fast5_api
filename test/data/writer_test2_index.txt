@@ -1,5 +1,0 @@
-channel	read_number	file_number	filename
-1	0	0	writer_test2_ch1_read0_strand.fast5
-1	1	0	writer_test2_ch1_read0_strand.fast5
-1	2	2	writer_test2_ch1_read2_strand.fast5
-2	3	3	writer_test2_ch2_read3_strand.fast5

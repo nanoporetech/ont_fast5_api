@@ -6,7 +6,6 @@ from ont_fast5_api.fast5_file import AbstractFast5File
 from ont_fast5_api.fast5_read import Fast5Read
 
 
-
 class MultiFast5File(AbstractFast5File):
     def __init__(self, filename, mode='r'):
         self.filename = filename
@@ -19,6 +18,11 @@ class MultiFast5File(AbstractFast5File):
             except IOError as e:
                 raise_from(IOError("Could not write 'file_version' in mode '{}' to fast5 file: {}"
                                    "".format(self.filename, self.mode)), e)
+
+    def get_reads(self):
+        for group_name in self.handle:
+            if group_name.startswith('read_'):
+                yield Fast5Read(self, group_name[5:])
 
     def get_read_ids(self):
         # Return all groups with the 'read_' stripped from the front

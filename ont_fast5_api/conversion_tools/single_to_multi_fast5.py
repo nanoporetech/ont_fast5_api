@@ -72,7 +72,7 @@ def add_read_to_multi_fast5(multi_f5, single_f5):
     read = multi_f5.create_read(read_id, run_id)
 
     # Copy Raw data into new file
-    read.handle.copy(single_f5.handle["Raw/Reads/Read_{}".format(read_number)], "Raw")
+    read.handle.copy(single_f5.handle[read.raw_dataset_group_name], "Raw")
 
     # Copy UniqueGlobalKey data into new file
     for group in single_f5.handle["UniqueGlobalKey"]:

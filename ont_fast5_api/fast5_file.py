@@ -5,6 +5,9 @@ import sys
 import h5py
 import numpy as np
 from collections import deque
+
+from ont_fast5_api.compression_settings import VBZ, raise_missing_vbz_error_read, raise_missing_vbz_error_write
+
 try:
     from ConfigParser import ConfigParser
 except ImportError:  # python3
@@ -41,7 +44,7 @@ mode_docstring = """Supported file modes:
     r+       Read/write, file must exist
     w        Create file, truncate if exists
     w- or x  Create file, fail if exists
-    a        Read/write if exists, create otherwise""" # Taken from h5py
+    a        Read/write if exists, create otherwise"""  # Taken from h5py
 
 
 class AbstractFast5File(object):
@@ -52,12 +55,18 @@ class AbstractFast5File(object):
         self.close()
         return False
 
+    @property
+    def raw_dataset_group_name(self):
+        raise NotImplementedError()
+
+    def get_reads(self):
+        raise NotImplementedError()
+
     def get_read_ids(self):
         raise NotImplementedError()
 
     def get_read(self, read_id):
         raise NotImplementedError()
-
 
     def assert_open(self):
         if not self._is_open:
@@ -67,7 +76,6 @@ class AbstractFast5File(object):
         self.assert_open()
         if self.mode == 'r':
             raise IOError("Fast5 file is in read-only mode '{}' {}".format(self.mode, self.filename))
-
 
     def close(self):
         """ Closes the object.
@@ -80,7 +88,6 @@ class AbstractFast5File(object):
             self.filename = None
             self._is_open = False
             self.status = None
-
 
 
 class Fast5File(AbstractFast5File):
@@ -110,6 +117,10 @@ class Fast5File(AbstractFast5File):
     def get_run_id(self):
         return self.handle[self.global_key + 'tracking_id'].attrs['run_id']
 
+    def get_reads(self):
+        # We yield here for consistency with MultiFast
+        yield self.get_read(self.get_read_id())
+
     def get_read_ids(self):
         return [self.get_read_id()]
 
@@ -126,7 +137,7 @@ class Fast5File(AbstractFast5File):
         """ Returns a dictionary of tracking-id key/value pairs.
         """
         self.assert_open()
-        tracking = self.handle[self.global_key +'tracking_id'].attrs.items()
+        tracking = self.handle[self.global_key + 'tracking_id'].attrs.items()
         tracking = {key: _clean(value) for key, value in tracking}
         return tracking
 
@@ -186,6 +197,19 @@ class Fast5File(AbstractFast5File):
         else:
             self._add_group(self.global_key + 'context_tags', data)
 
+    @property
+    def raw_dataset_group_name(self):
+        read_number = self._get_only_read_number()
+        return 'Raw/Reads/Read_{}'.format(read_number)
+
+    @property
+    def raw_dataset_name(self):
+        return self.raw_dataset_group_name + "/Signal"
+
+    @property
+    def compression_filters(self):
+        return self.handle[self.raw_dataset_name]._filters
+
     def get_raw_data(self, read_number=None, start=None, end=None, scale=False):
         """ Pull raw data from the file.
         
@@ -201,20 +225,12 @@ class Fast5File(AbstractFast5File):
         :returns: Raw data as either 32 bit floats, or 16 bit integers.
         """
         self.assert_open()
-        if read_number is None:
-            read_number = self._get_only_read_number()
-        read_index = self.status.read_number_map[read_number]
-        if not self.status.read_info[read_index].has_raw_data:
+        if self.raw_dataset_name not in self.handle:
             msg = 'Fast5 file has no raw data for read {} in {}'.format(read_number, self.filename)
             raise KeyError(msg)
-        if end is None:
-            end = self.status.read_info[read_index].duration
-        if start is None:
-            start = 0
-        dataset_name = 'Raw/Reads/Read_{}/Signal'.format(read_number)
-        return self._load_raw(dataset_name, start, end, scale)
+        return self._load_raw(self.raw_dataset_name, start, end, scale)
 
-    def add_raw_data(self, read_number, data):
+    def add_raw_data(self, data, attrs=None, compression=VBZ):
         """ Add raw data for a read.
         
         :param read_number: The number of the read the raw data is for.
@@ -224,11 +240,24 @@ class Fast5File(AbstractFast5File):
         have raw data.
         """
         self.assert_writeable()
-        read_index = self.status.read_number_map[read_number]
-        if self.status.read_info[read_index].has_raw_data:
+
+        if self.raw_dataset_name in self.handle:
             msg = 'Fast5 file already has raw data for read {} in {}'
-            raise KeyError(msg.format(read_number, self.filename))
-        self._save_raw(read_number, data)
+            raise KeyError(msg.format(self.raw_dataset_name, self.filename))
+
+        group_name = self.raw_dataset_group_name
+        if group_name not in self.handle:
+            self.handle.create_group(group_name)
+
+        try:
+            self.handle[group_name].create_dataset('Signal', data=data, dtype='i2', **vars(compression))
+        except ValueError as e:
+            raise_missing_vbz_error_read(e)
+            
+        read_index = self.status.read_number_map[self._get_only_read_number()]
+        self.status.read_info[read_index].has_raw_data = True
+        if attrs is not None:
+            self._add_attributes(group_name, attrs, clear=True)
 
     def list_analyses(self, component=None):
         """ Provides a list of all analyses groups.
@@ -365,7 +394,7 @@ class Fast5File(AbstractFast5File):
         n = len(self.status.read_info) - 1
         self.status.read_number_map[read_number] = n
         self.status.read_id_map[read_id] = n
-        group_name = 'Raw/Reads/Read_{}'.format(read_number)
+        group_name = self.raw_dataset_group_name
         attrs = {'read_number': read_number,
                  'read_id': read_id,
                  'start_time': start_time,
@@ -680,7 +709,10 @@ class Fast5File(AbstractFast5File):
     ##########################
 
     def _load_raw(self, dataset_name, start, end, scale):
-        raw = self.handle[dataset_name]
+        try:
+            raw = self.handle[dataset_name][start:end]
+        except OSError as err:
+            raise_missing_vbz_error_write(err)
         if scale:
             channel_info = self.handle[self.global_key + 'channel_id'].attrs
             digi = channel_info['digitisation']
@@ -688,16 +720,8 @@ class Fast5File(AbstractFast5File):
             offset = channel_info['offset']
             scaling = parange / digi
             # python slice syntax allows None, https://docs.python.org/3/library/functions.html#slice
-            data = np.array(scaling * (raw[start:end] + offset), dtype=np.float32)
-        else:
-            data = raw[start:end]
-        return data
-
-    def _save_raw(self, read_number, data):
-        group_name = 'Raw/Reads/Read_{}'.format(read_number)
-        self.handle[group_name].create_dataset('Signal', data=data, compression='gzip', shuffle=True)
-        read_index = self.status.read_number_map[read_number]
-        self.status.read_info[read_index].has_raw_data = True
+            raw = np.array(scaling * (raw + offset), dtype=np.float32)
+        return raw
 
     def _get_only_read_number(self):
         read_number = self.status.read_info[0].read_number
@@ -761,6 +785,7 @@ class Fast5File(AbstractFast5File):
             self.handle = h5py.File(self.filename, self.mode)
             self._is_open = True
 
+
 def _sanitize_data_for_writing(data):
     # We only really need to do interesting conversions for python3
     if sys.version_info.major == 3:
@@ -809,3 +834,11 @@ def _sanitize_data_for_reading(data):
                     dtypes[index] = (entry[0], '<U{}'.format(entry[1][2:]))
             return data.astype(dtypes)
     return data
+
+
+class EmptyFast5(Fast5File):
+    def _initialise_file(self):
+        # Enable creation of Fast5File without metadata, which we will populate later
+        self.handle = h5py.File(self.filename, self.mode)
+        self.handle.attrs['file_version'] = CURRENT_FAST5_VERSION
+        self._is_open = True

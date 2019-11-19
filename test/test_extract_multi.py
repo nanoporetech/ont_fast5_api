@@ -1,3 +1,8 @@
+try:
+    from unittest.mock import patch
+except ImportError:  # python2 compatibility
+    from mock import patch
+
 from tempfile import _get_candidate_names, mkdtemp
 from ont_fast5_api.conversion_tools.fast5_subset import Fast5Filter, read_generator, extract_selected_reads
 from ont_fast5_api.multi_fast5 import MultiFast5File
@@ -14,9 +19,9 @@ class ExtractMultiTest(unittest.TestCase):
     def test_read_generator(self):
         test_read_set = {item for item in self.read_set}  # copy
 
-        for read, group in read_generator(input_file=self.multifast5, read_set=self.read_set):
-            assert read in self.read_set
-            test_read_set.remove(read)
+        for read_id, read in read_generator(input_file=self.multifast5, read_set=self.read_set):
+            assert read_id in self.read_set
+            test_read_set.remove(read_id)
 
         assert len(test_read_set) == 0
 
@@ -49,8 +54,8 @@ class ExtractMultiTest(unittest.TestCase):
 
             unlink(temp_file_name)
 
-    def test_selector_args_generator(self):
-
+    @patch('ont_fast5_api.conversion_tools.fast5_subset.get_progress_bar')
+    def test_selector_args_generator(self, mock_pbar):
         test_read_set = {item for item in self.read_set}  # copy to be modified
         base_path = path.dirname(__file__)
         single_reads = path.join(base_path, "data", "single_reads")

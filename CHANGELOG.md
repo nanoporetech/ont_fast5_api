@@ -4,6 +4,21 @@ All notable changes and fixes to ont_fast5_api will be documented here
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 This project (aspires to) adhere to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] 2019-11-19
+### Added 
+- Compatibility for VBZ compressed reads
+- `compress_fast5` script for compressing/decompressing fast5 files
+- `get_reads()` helper method to more easily loop through reads in a fast5 file
+### Changed
+- `Fast5File().get_raw_data()` updated interface to match `Fast5Read` and remove support for legacy files with multiple read numbers in a single `Fast5File`
+- Minimum depedency version requirements bumped. Set to Ubuntu16 `apt` python3-package defaults 
+### Removed 
+- Legacy `Fast5Writer` object. `MultiReadFast5` or `EmptyFast5File` are preferred 
+
+## [1.4.9] 2019-11-01
+### Added
+- Check for progressbar2 package and fail early if it's installed.
+
 ## [1.4.8] 2019-10-22
 ### Added
 - Support for h5py==2.10 string data type encoding changes

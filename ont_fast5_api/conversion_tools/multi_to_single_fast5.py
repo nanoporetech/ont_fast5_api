@@ -4,26 +4,16 @@ from argparse import ArgumentParser
 from multiprocessing import Pool
 from collections import deque
 import logging
-import h5py
 import os
 
-from ont_fast5_api import CURRENT_FAST5_VERSION, __version__
+from ont_fast5_api import __version__
 from ont_fast5_api.conversion_tools.conversion_utils import get_fast5_file_list, get_progress_bar
-from ont_fast5_api.fast5_file import Fast5File
+from ont_fast5_api.fast5_file import EmptyFast5
 from ont_fast5_api.multi_fast5 import MultiFast5File
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 exc_info = False
-
-
-
-class EmptyFast5(Fast5File):
-    def _initialise_file(self):
-        # We don't want to create/validate the full f5 data structure as most fields won't exist yet
-        self.handle = h5py.File(self.filename, self.mode)
-        self.handle.attrs['file_version'] = CURRENT_FAST5_VERSION
-        self._is_open = True
 
 
 def batch_convert_multi_files_to_single(input_path, output_folder, threads, recursive):
@@ -58,15 +48,14 @@ def convert_multi_to_single(input_file, output_folder, subfolder):
     results = deque([os.path.basename(input_file)])
     try:
         with MultiFast5File(input_file, 'r') as multi_f5:
-            for read_id in multi_f5.get_read_ids():
+            for read in multi_f5.get_reads():
                 try:
-                    read = multi_f5.get_read(read_id)
-                    output_file = os.path.join(output_folder, subfolder, "{}.fast5".format(read_id))
+                    output_file = os.path.join(output_folder, subfolder, "{}.fast5".format(read.read_id))
                     create_single_f5(output_file, read)
                     results.append(os.path.basename(output_file))
                 except Exception as e:
                     logger.error("{}\n\tFailed to copy read '{}' from {}"
-                                 "".format(str(e), read_id, input_file), exc_info=exc_info)
+                                 "".format(str(e), read.read_id, input_file), exc_info=exc_info)
     except Exception as e:
         logger.error("{}\n\tFailed to copy files from: {}"
                      "".format(e, input_file), exc_info=exc_info)

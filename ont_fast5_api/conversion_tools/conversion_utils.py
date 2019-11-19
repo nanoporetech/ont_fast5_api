@@ -34,4 +34,16 @@ def get_fast5_file_list(input_path, recursive):
 
 def get_progress_bar(num_reads):
     bar_format = [RotatingMarker(), " ", SimpleProgress(), Bar(), Percentage(), " ", ETA()]
-    return ProgressBar(maxval=num_reads, widgets=bar_format).start()
+    progress_bar = ProgressBar(maxval=num_reads, widgets=bar_format)
+    bad_progressbar_version = False
+    try:
+        progress_bar.currval
+    except AttributeError as e:
+        bad_progressbar_version = True
+        pass
+    if bad_progressbar_version:
+        raise RuntimeError('Wrong progressbar package detected, likely '
+                           '"progressbar2". Please uninstall that package and '
+                           'install "progressbar33" instead.')
+
+    return progress_bar.start()

@@ -1,4 +1,6 @@
 import warnings
+
+from ont_fast5_api.compression_settings import VBZ, raise_missing_vbz_error_read
 from ont_fast5_api.fast5_file import Fast5File
 
 
@@ -23,7 +25,7 @@ class Fast5Read(Fast5File):
     def has_context_tags(self):
         return 'context_tags' in self.handle
 
-    def add_raw_data(self, data, attrs):
+    def add_raw_data(self, data, attrs=None, compression=VBZ):
         """ Add raw data for a read.
 
         :param data: The raw data DAQ values (16 bit integers).
@@ -32,13 +34,18 @@ class Fast5Read(Fast5File):
         have raw data.
         """
         self.assert_writeable()
-        if "Raw" not in self.handle:
-            self.handle.create_group("Raw")
-        if "Signal" in self.handle['Raw']:
+        if self.raw_dataset_group_name not in self.handle:
+            self.handle.create_group(self.raw_dataset_group_name)
+        if self.raw_dataset_name in self.handle:
             msg = "Fast5 file already has raw data for read '{}' in: {}"
             raise KeyError(msg.format(self.read_id, self.filename))
-        self.handle['Raw'].create_dataset('Signal', data=data, compression='gzip', shuffle=True, dtype='i2')
-        self._add_attributes("Raw", attrs, clear=True)
+        try:
+            self.handle[self.raw_dataset_group_name].create_dataset('Signal', data=data, dtype='i2', **vars(compression))
+        except ValueError as e:
+            raise_missing_vbz_error_read(e)
+
+        if attrs is not None:
+            self._add_attributes(self.raw_dataset_group_name, attrs, clear=True)
 
     def add_channel_info(self, attrs, clear=False):
         """ Add channel info data to the channel_id group.
@@ -75,10 +82,14 @@ class Fast5Read(Fast5File):
             self.handle.create_group("Analyses")
         super(Fast5Read, self).add_analysis(component, group_name, attrs, config)
 
+    @property
+    def raw_dataset_group_name(self):
+        return 'Raw'
+
     def get_raw_data(self, read_number=None, start=None, end=None, scale=False):
         if read_number:
             warnings.warn("Read number is not used for MultiReadFast5")
-        return self._load_raw("Raw/Signal", start, end, scale)
+        return self._load_raw(self.raw_dataset_name, start, end, scale)
 
     def add_read(self, read_number, read_id, start_time, duration, mux, median_before):
         raise NotImplementedError("Cannot add_read() to a Fast5Read(). "

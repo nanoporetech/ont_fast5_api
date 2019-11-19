@@ -31,7 +31,7 @@ class TestSegmentationTools(unittest.TestCase):
             fh.add_read(12, 'unique_snowflake', 12345, 1000, 0, 120.75)
             raw = np.empty(1000, dtype=np.int16)
             raw[:] = range(1000)
-            fh.add_raw_data(12, raw)
+            fh.add_raw_data(raw)
             attrs = {'name': 'test', 'version': 0, 'time_stamp': 'just now'}
             fh.add_analysis('segmentation', 'Segmentation_000', attrs)
             segment_data = {'has_template': 1,

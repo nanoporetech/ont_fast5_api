@@ -177,7 +177,7 @@ def _clean(value):
         # h5py==2.8.0 on windows sometimes fails to cast this from an np.float64 to a python.float
         # We have explicitly cast in Albacore (merge 488) to avoid this bug, since casting here could be dangerous
         # https://github.com/h5py/h5py/issues/1051
-        conversion = np.asscalar(value)
+        conversion = value.item() # np.asscalar(value) was deprecated in v1.16
         if sys.version_info.major == 3 and isinstance(conversion, bytes):
             conversion = conversion.decode()
         return conversion

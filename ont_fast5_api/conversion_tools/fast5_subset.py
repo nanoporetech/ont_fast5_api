@@ -15,7 +15,6 @@ from ont_fast5_api.conversion_tools.single_to_multi_fast5 import add_read_to_mul
 from ont_fast5_api.conversion_tools.conversion_utils import get_fast5_file_list, get_progress_bar
 from ont_fast5_api.fast5_interface import get_fast5_file
 
-
 logging.basicConfig(level=logging.DEBUG)
 
 
@@ -31,7 +30,8 @@ class Fast5Filter:
       Is triggered if threads is set to 1 or there is only a single input file or number of reads in read_list_file
       does not exceed batch_size, so there will only be single output file.
     """
-    def __init__(self, input_folder, output_folder, read_list_file, filename_base,
+
+    def __init__(self, input_folder, output_folder, read_list_file, filename_base="batch",
                  batch_size=4000, threads=1, recursive=False, file_list_file=None):
         assert path.isdir(input_folder)
         assert path.isfile(read_list_file)
@@ -48,7 +48,8 @@ class Fast5Filter:
             raise ValueError("No reads in read list file {}".format(read_list_file))
 
         if len(self.input_f5s) < 1:
-            raise ValueError("No input fast5 files found in {}. Recursion is set to {}".format(str(input_folder), recursive))
+            raise ValueError(
+                "No input fast5 files found in {}. Recursion is set to {}".format(str(input_folder), recursive))
 
         if batch_size < 1:
             raise ValueError("Batch size (--batch_size) must be a positive integer, not {}".format(batch_size))
@@ -65,7 +66,7 @@ class Fast5Filter:
         # determine max number of workers
         self.batch_size = batch_size
         num_outputs = int(ceil(len(self.read_set) / float(batch_size)))
-        self.num_workers = min(threads, min(num_outputs, len(self.input_f5s)))
+        self.num_workers = min(threads, num_outputs, len(self.input_f5s))
 
         if not path.exists(output_folder):
             mkdir(output_folder)
@@ -219,13 +220,14 @@ def get_filter_reads(read_list_file):
 
         for line in read_list_tsv:
             reads.add(line[col_idx].strip())
-
+    if len(reads) < 1:
+        raise ValueError("No reads in read list file {}".format(read_list_file))
     return reads
 
 
 def extract_selected_reads(input_file, output_file, read_set, count):
     """
-    Take reads from input file if read id is in read_set
+    Take reads from input file if read_id id is in read_set
     Write to output file, at most count times
     return tuple (found_reads, output_file, input_file)
     If input file was exhausted, the third item in return is None
@@ -238,15 +240,15 @@ def extract_selected_reads(input_file, output_file, read_set, count):
     found_reads = set()
     with MultiFast5File(str(output_file), 'a') as output_f5:
         reads_present = set(output_f5.get_read_ids())
-        for read, group in read_generator(input_file, read_set):
-            found_reads.add(read)
+        for read_id, read in read_generator(input_file, read_set):
+            found_reads.add(read_id)
 
-            if read in reads_present:
+            if read_id in reads_present:
                 continue
 
-            copy_read_to_multi_fast5(group, output_f5)
+            copy_read_to_multi_fast5(read, output_f5)
 
-            reads_present.add(read)
+            reads_present.add(read_id)
 
             if len(found_reads) >= count:
                 return found_reads, output_file, input_file
@@ -256,35 +258,32 @@ def extract_selected_reads(input_file, output_file, read_set, count):
 
 def read_generator(input_file, read_set):
     """
-    Open input_file as Fast5, yield tuples (read_id, Group) for every read_id that is present in read_set
+    Open input_file as Fast5, yield tuples (read_id, fast5_read) for every read_id that is present in read_set
     :param input_file:
     :param read_set:
     :return:
     """
     with get_fast5_file(str(input_file)) as input_f5:
         read_ids = input_f5.get_read_ids()
-
-        for read in read_set.intersection(read_ids):
-            group = input_f5.get_read(read)
-
-            yield read, group
+        for read_id in read_set.intersection(read_ids):
+            read = input_f5.get_read(read_id)
+            yield read_id, read
 
 
-def copy_read_to_multi_fast5(group, output_f5):
-    if isinstance(group, Fast5Read):
-        copy_read_from_multi(multi_f5=output_f5, source=group)
-    elif isinstance(group, Fast5File):
-        copy_read_from_single(multi_f5=output_f5, single_f5=group)
+def copy_read_to_multi_fast5(read, output_f5):
+    if isinstance(read, Fast5Read):
+        copy_read_from_multi(multi_f5=output_f5, read=read)
+    elif isinstance(read, Fast5File):
+        copy_read_from_single(multi_f5=output_f5, single_f5=read)
     else:
-        raise TypeError("Group type {} can't be copied".format(type(group)))
+        raise TypeError("Group type {} can't be copied".format(type(read)))
 
 
-def copy_read_from_multi(multi_f5, source):
-    assert isinstance(source, Fast5Read)
+def copy_read_from_multi(multi_f5, read):
+    assert isinstance(read, Fast5Read)
     assert isinstance(multi_f5, MultiFast5File)
-    read_name = "read_" + source.get_read_id()
-    group = source.handle
-    multi_f5.handle.copy(group, read_name)
+    read_name = "read_" + read.get_read_id()
+    multi_f5.handle.copy(read.handle, read_name)
 
 
 def main():
