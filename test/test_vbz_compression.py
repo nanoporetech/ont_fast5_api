@@ -1,8 +1,11 @@
+import h5py
 import os
-import shutil
 import unittest
 
-import h5py
+try:
+    from unittest.mock import patch
+except ImportError:  # python2 compatibility
+    from mock import patch
 
 from ont_fast5_api.compression_settings import VBZ
 from ont_fast5_api.conversion_tools.compress_fast5 import compress_read_from_multi, compress_read_from_single, \
@@ -12,27 +15,15 @@ from ont_fast5_api.fast5_file import Fast5File, EmptyFast5
 from ont_fast5_api.fast5_info import ReadInfo
 from ont_fast5_api.fast5_interface import get_fast5_file
 from ont_fast5_api.multi_fast5 import MultiFast5File
-
-try:
-    from unittest.mock import patch
-except ImportError:  # python2 compatibility
-    from mock import patch
-
-test_data = os.path.join(os.path.dirname(__file__), 'data')
-save_path = os.path.join(os.path.dirname(__file__), 'tmp')
+from test.helpers import TestFast5ApiHelper, test_data
 
 
-class TestVbzReadWrite(unittest.TestCase):
-
-    def setUp(self):
-        self.run_id = "123abc"
-        if os.path.exists(save_path):
-            shutil.rmtree(save_path)
-        os.makedirs(save_path)
+class TestVbzReadWrite(TestFast5ApiHelper):
+    run_id = "123abc"
 
     def test_write_vbz_directly(self):
         input_data = range(10)
-        with h5py.File(os.path.join(save_path, 'h5py.fast5'), 'w') as fast5:
+        with h5py.File(os.path.join(self.save_path, 'h5py.fast5'), 'w') as fast5:
             fast5.create_dataset('Signal', data=input_data, **vars(VBZ))
             raw = fast5['Signal']
 
@@ -53,7 +44,7 @@ class TestVbzReadWrite(unittest.TestCase):
     def test_write_vbz_using_api(self):
         input_data = list(range(5))
         read_id = "0a1b2c3d"
-        with MultiFast5File(os.path.join(save_path, 'api_write.fast5'), 'w') as fast5:
+        with MultiFast5File(os.path.join(self.save_path, 'api_write.fast5'), 'w') as fast5:
             fast5.create_read(read_id, self.run_id)
             read = fast5.get_read(read_id)
             read.add_raw_data(input_data, attrs={}, compression=VBZ)
@@ -69,7 +60,7 @@ class TestVbzReadWrite(unittest.TestCase):
         input_data = list(range(5))
         read_id = "0a1b2c3d"
         read_number = 0
-        with Fast5File(os.path.join(save_path, 'api_write_single.fast5'), 'w') as fast5:
+        with Fast5File(os.path.join(self.save_path, 'api_write_single.fast5'), 'w') as fast5:
             fast5.status.read_number_map[read_number] = read_number
             fast5.status.read_info = [ReadInfo(read_number=read_number, read_id=read_id,
                                                start_time=0, duration=len(input_data))]
@@ -84,12 +75,8 @@ class TestVbzReadWrite(unittest.TestCase):
             self.assertEqual(VBZ.compression_opts, filters[str(VBZ.compression)])
 
 
-class TestVbzConvert(unittest.TestCase):
-
-    def setUp(self):
-        if os.path.exists(save_path):
-            shutil.rmtree(save_path)
-        os.makedirs(save_path)
+class TestVbzConvert(TestFast5ApiHelper):
+    run_id = "123abc"
 
     def assertUncompressed(self, read):
         filters = read.compression_filters
@@ -109,7 +96,7 @@ class TestVbzConvert(unittest.TestCase):
     def test_compress_read_from_multi(self):
         target_compression = VBZ
         with get_fast5_file(os.path.join(test_data, "multi_read", "batch_0.fast5"), "r") as input_f5, \
-                MultiFast5File(os.path.join(save_path, 'compress_multi_out.fast5'), 'w') as output_f5:
+                MultiFast5File(os.path.join(self.save_path, 'compress_multi_out.fast5'), 'w') as output_f5:
             read_id = input_f5.get_read_ids()[0]
             input_read = input_f5.get_read(read_id)
 
@@ -123,7 +110,7 @@ class TestVbzConvert(unittest.TestCase):
 
     def test_compress_read_from_single(self):
         with get_fast5_file(os.path.join(test_data, "single_reads", "read0.fast5"), "r") as input_f5, \
-                EmptyFast5(os.path.join(save_path, 'compress_single_out.fast5'), 'w') as output_f5:
+                EmptyFast5(os.path.join(self.save_path, 'compress_single_out.fast5'), 'w') as output_f5:
             read_id = input_f5.get_read_ids()[0]
             input_read = input_f5.get_read(read_id)
 
@@ -138,12 +125,11 @@ class TestVbzConvert(unittest.TestCase):
     @patch('ont_fast5_api.conversion_tools.compress_fast5.get_progress_bar')
     def test_conversion_script_multi(self, mock_pbar):
         input_folder = os.path.join(test_data, 'multi_read')
-        output_folder = save_path
-        compress_batch(input_folder=input_folder, output_folder=output_folder, target_compression=VBZ)
+        compress_batch(input_folder=input_folder, output_folder=self.save_path, target_compression=VBZ)
 
         count_files = 0
         count_reads = 0
-        for out_file in get_fast5_file_list(save_path, recursive=True):
+        for out_file in get_fast5_file_list(self.save_path, recursive=True, follow_symlinks=True):
             count_files += 1
             with get_fast5_file(out_file) as f5:
                 self.assertTrue(isinstance(f5, MultiFast5File))
@@ -156,11 +142,11 @@ class TestVbzConvert(unittest.TestCase):
     @patch('ont_fast5_api.conversion_tools.compress_fast5.get_progress_bar')
     def test_conversion_script_single(self, mock_pbar):
         input_folder = os.path.join(test_data, 'single_reads')
-        compress_batch(input_folder=input_folder, output_folder=save_path, target_compression=VBZ)
+        compress_batch(input_folder=input_folder, output_folder=self.save_path, target_compression=VBZ)
 
         count_files = 0
         count_reads = 0
-        for out_file in get_fast5_file_list(save_path, recursive=True):
+        for out_file in get_fast5_file_list(self.save_path, recursive=True, follow_symlinks=True):
             count_files += 1
             with get_fast5_file(out_file) as f5:
                 self.assertTrue(isinstance(f5, Fast5File))

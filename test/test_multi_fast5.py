@@ -1,30 +1,23 @@
+import numpy
 import os
 import random
-import shutil
-import unittest
-
-import numpy
 
 from ont_fast5_api.fast5_file import Fast5File
 from ont_fast5_api.fast5_read import Fast5Read
 from ont_fast5_api.multi_fast5 import MultiFast5File
+from test.helpers import TestFast5ApiHelper
 
 hexdigits = "0123456789abcdef"
-save_path = os.path.join(os.path.dirname(__file__), 'tmp')
+run_id = "123abc"
 
 
-class TestMultiFast5(unittest.TestCase):
-    def setUp(self):
-        self.run_id = "123abc"
-        if os.path.exists(save_path):
-            shutil.rmtree(save_path)
-        os.makedirs(save_path)
+class TestMultiFast5(TestFast5ApiHelper):
 
     def create_multi_file(self, read_ids):
-        filename = os.path.join(save_path, "multi.fast5")
+        filename = self.generate_temp_filename()
         with MultiFast5File(filename, 'w') as multi_f5:
             for read_id in read_ids:
-                multi_f5.create_read(read_id, self.run_id)
+                multi_f5.create_read(read_id, run_id)
         return filename
 
     def test_read_interface(self):
@@ -37,7 +30,7 @@ class TestMultiFast5(unittest.TestCase):
 
             # Try and add another read with the same read_id and expect error
             with self.assertRaises(ValueError):
-                multi_f5.create_read(read_ids[0], self.run_id)
+                multi_f5.create_read(read_ids[0], run_id)
 
             # Test we can get a read from the file and it has the interface we expect
             read_0 = multi_f5.get_read(read_ids[0])
@@ -120,6 +113,7 @@ class TestMultiFast5(unittest.TestCase):
             read0.add_analysis(component, group, attrs)
             self.assertEqual(read0.list_analyses(), [(component, group)])
             self.assertEqual(read0.get_analysis_attributes(group), expected_attributes)
+
 
 def generate_read_ids(num_ids, id_len=8):
     return ["".join(random.choice(hexdigits) for _ in range(id_len)) for _ in range(num_ids)]

@@ -1,31 +1,17 @@
 import os
 import sys
-import unittest
-import warnings
 import numpy as np
-from shutil import rmtree
-import ont_fast5_api
 from ont_fast5_api.fast5_file import Fast5File
 from ont_fast5_api.analysis_tools.basecall_2d import Basecall2DTools
-
-test_data = os.path.join(os.path.dirname(__file__), 'data')
-save_path = os.path.join(os.path.dirname(__file__), 'tmp')
+from test.helpers import TestFast5ApiHelper
 
 py3 = sys.version_info.major == 3
 
 
-class TestBasecall2DTools(unittest.TestCase):
-    def setUp(self):
-        self.save_path = save_path
-        if not os.path.exists(self.save_path):
-            os.makedirs(self.save_path)
-
-    def tearDown(self):
-        if os.path.exists(self.save_path):
-            rmtree(self.save_path)
+class TestBasecall2DTools(TestFast5ApiHelper):
 
     def test_001_put_and_retrieve(self):
-        fname = os.path.join(self.save_path, 'test_file.fast5')
+        fname = self.generate_temp_filename()
         dtypes = [('template', int), ('complement', int)]
         data1 = np.zeros(10, dtype=dtypes)
         data1['template'] = [0, 1, 2, 2, 3, 4, 5, 6, 7, 8]

@@ -1,27 +1,16 @@
 import os
-import unittest
 import numpy as np
-from shutil import rmtree
+
 from ont_fast5_api.fast5_file import Fast5File
 from ont_fast5_api.analysis_tools.event_detection import EventDetectionTools
 from ont_fast5_api.analysis_tools.segmentation import SegmentationTools
-
-test_data = os.path.join(os.path.dirname(__file__), 'data')
-save_path = os.path.join(os.path.dirname(__file__), 'tmp')
+from test.helpers import TestFast5ApiHelper
 
 
-class TestSegmentationTools(unittest.TestCase):
-    def setUp(self):
-        self.save_path = save_path
-        if not os.path.exists(self.save_path):
-            os.makedirs(self.save_path)
-
-    def tearDown(self):
-        if os.path.exists(self.save_path):
-            rmtree(self.save_path)
+class TestSegmentationTools(TestFast5ApiHelper):
 
     def test_001_raw_only(self):
-        fname = os.path.join(self.save_path, 'test_file.fast5')
+        fname = self.generate_temp_filename()
         with Fast5File(fname, mode='w') as fh:
             fh.add_channel_info({'channel_number': 1,
                                  'sampling_rate': 4000,
@@ -63,7 +52,7 @@ class TestSegmentationTools(unittest.TestCase):
                 np.testing.assert_array_almost_equal(comp_raw, scaled_comp, decimal=5)
 
     def test_002_events_only(self):
-        fname = os.path.join(self.save_path, 'test_file.fast5')
+        fname = self.generate_temp_filename()
         with Fast5File(fname, mode='w') as fh:
             fh.add_channel_info({'channel_number': 1,
                                  'sampling_rate': 4000,

@@ -22,11 +22,11 @@ def makedirs(name, exist_ok):
                 os.makedirs(name)
 
 
-def compress_batch(input_folder, output_folder, target_compression, recursive=True, threads=1):
+def compress_batch(input_folder, output_folder, target_compression, recursive=True, threads=1, follow_symlinks=True):
     # We require an absolute input path to we can replicate the data structure relative to it later on
     input_folder = os.path.abspath(input_folder)
 
-    file_list = get_fast5_file_list(input_folder, recursive)
+    file_list = get_fast5_file_list(input_folder, recursive, follow_symlinks=follow_symlinks)
     if len(file_list) == 0:
         raise ValueError("No input fast5 files found in '{}'. Recursive={}".format(input_folder, recursive))
 
@@ -119,6 +119,8 @@ def main():
                         help="Maximum number of threads to use")
     parser.add_argument('--recursive', action='store_true',
                         help="Search recursively through folders for single_read fast5 files")
+    parser.add_argument('--ignore_symlinks', action='store_true',
+                        help="Ignore symlinks when searching recursively for fast5 files")
     parser.add_argument('-v', '--version', action='version', version=__version__)
     args = parser.parse_args()
 
@@ -126,7 +128,8 @@ def main():
                    output_folder=args.save_path,
                    target_compression=COMPRESSION_MAP[args.compression],
                    threads=args.threads,
-                   recursive=args.recursive)
+                   recursive=args.recursive,
+                   follow_symlinks=not args.ignore_symlinks)
 
 
 if __name__ == '__main__':

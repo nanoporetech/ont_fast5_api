@@ -1,38 +1,25 @@
-import os
-import unittest
-import sys
-
 try:
     from ConfigParser import ConfigParser
 except:  # python3
     from configparser import ConfigParser
 import numpy as np
+import os
+import sys
+
 from numpy import array, ndarray
-from shutil import rmtree, copyfile
+from shutil import copyfile
 from tempfile import NamedTemporaryFile
+from unittest import skipUnless, skipIf
 
 from ont_fast5_api import CURRENT_FAST5_VERSION
 from ont_fast5_api.fast5_info import Fast5Info, _clean
-from ont_fast5_api.fast5_file import (Fast5File,
-                                      _sanitize_data_for_reading,
-                                      _sanitize_data_for_writing)
-
-test_data = os.path.join(os.path.dirname(__file__), 'data')
-save_path = os.path.join(os.path.dirname(__file__), 'tmp')
+from ont_fast5_api.fast5_file import Fast5File, _sanitize_data_for_reading, _sanitize_data_for_writing
+from test.helpers import TestFast5ApiHelper, test_data
 
 py3 = sys.version_info.major == 3
 
 
-class TestFast5File(unittest.TestCase):
-    def setUp(self):
-        self.maxDiff = None
-        self.save_path = save_path
-        if not os.path.exists(self.save_path):
-            os.makedirs(self.save_path)
-
-    def tearDown(self):
-        if os.path.exists(self.save_path):
-            rmtree(self.save_path)
+class TestFast5File(TestFast5ApiHelper):
 
     def test_001_get_latest_analysis(self):
         test_file = os.path.join(test_data, 'basecall_2d_file_v1.0.fast5')
@@ -77,7 +64,7 @@ class TestFast5File(unittest.TestCase):
         self.assertEqual(expected, summary)
 
     def test_002_add_analysis_group(self):
-        fname = os.path.join(self.save_path, 'group_test.fast5')
+        fname = self.generate_temp_filename()
         with Fast5File(fname, mode='w') as fast5:
             att = {'foo': 1, 'bar': 2}
             fast5.add_analysis('test', 'Test_000', att)
@@ -91,7 +78,7 @@ class TestFast5File(unittest.TestCase):
             self.assertEqual(att, att_in)
 
     def test_003_add_analysis_subgroup(self):
-        fname = os.path.join(self.save_path, 'group_test.fast5')
+        fname = self.generate_temp_filename()
         with Fast5File(fname, mode='w') as fast5:
             fast5.add_analysis('test', 'Test_000', attrs={})
             fast5.add_analysis_subgroup('Test_000', 'Sub1', attrs={'foo': 'bar', 'monkey': 1})
@@ -130,7 +117,7 @@ class TestFast5File(unittest.TestCase):
         result = Fast5Info(fname)
         self.assertEqual(0.6, result.version)
         # Copy file and Update to current format.
-        new_file = os.path.join(self.save_path, 'raw_read_v0.6_test.fast5')
+        new_file = self.generate_temp_filename()
         copyfile(fname, new_file)
         Fast5File.update_legacy_file(new_file)
         result = Fast5Info(new_file)
@@ -159,7 +146,7 @@ class TestFast5File(unittest.TestCase):
         result = Fast5Info(fname)
         self.assertEqual(1.0, result.version)
         # Copy file and Update to current format.
-        new_file = os.path.join(self.save_path, 'single_read_v1.0_test.fast5')
+        new_file = self.generate_temp_filename()
         copyfile(fname, new_file)
         Fast5File.update_legacy_file(new_file)
         result = Fast5Info(new_file)
@@ -190,7 +177,7 @@ class TestFast5File(unittest.TestCase):
 
         self.assertEqual(_clean(array([1, 2, 3])), [1, 2, 3])
 
-    @unittest.skipUnless(py3, 'Skipping python 3 test')
+    @skipUnless(py3, 'Skipping python 3 test')
     def test_fast5_info__clean_py3(self):
         # _clean should convert byte strings into python3 utf-8 ones
         test_str = array(b'Hello!', dtype=bytes)
@@ -198,7 +185,7 @@ class TestFast5File(unittest.TestCase):
         self.assertEqual(_clean(test_str), 'Hello!')
 
     def test_fast5_add_and_get_chain(self):
-        fname = os.path.join(self.save_path, 'chain_test.fast5')
+        fname = self.generate_temp_filename()
         group_name1 = 'First_000'
         component1 = 'first'
         component1_path = 'Analyses/{}'.format(group_name1)
@@ -232,7 +219,7 @@ class TestFast5File(unittest.TestCase):
             self.assertEqual(fast5.get_chain(group_name2), chain)
 
     def test_fast5__add_group(self):
-        fname = os.path.join(self.save_path, 'add_group_test.fast5')
+        fname = self.generate_temp_filename()
         group_name = 'First_000'
         component = 'first'
         component_path = 'Analyses/{}'.format(group_name)
@@ -251,7 +238,7 @@ class TestFast5File(unittest.TestCase):
             self.assertEqual(fast5.get_latest_analysis('First'), group_name)
 
     def test_fast5_add_analysis_dataset(self):
-        fname = os.path.join(self.save_path, 'add_analysis_dataset.fast5')
+        fname = self.generate_temp_filename()
         group_name = 'First_000'
         component = 'first'
 
@@ -275,7 +262,7 @@ class TestFast5File(unittest.TestCase):
             self.assertEqual(answer, 'hello')
 
     def test_fast5_set_analysis_config(self):
-        fname = os.path.join(self.save_path, 'set_analysis_config.fast5')
+        fname = self.generate_temp_filename()
         group_name = 'First_000'
         component = 'first'
         with Fast5File(fname, mode='w') as fast5:
@@ -309,7 +296,7 @@ class TestFast5File(unittest.TestCase):
             get_config = fast5.get_analysis_config(group_name)
             self.assertEqual(get_config['section']['key'], 'value')
 
-    @unittest.skipIf(py3, 'Skipping python 2 test')
+    @skipIf(py3, 'Skipping python 2 test')
     def test__sanitize_data_py2(self):
         # We expect nothing to get sanitized in python 2
         test_string = 'Avast'
@@ -325,7 +312,7 @@ class TestFast5File(unittest.TestCase):
         self.assertEqual(test_ndarray, _sanitize_data_for_reading(test_ndarray))
         self.assertEqual(test_ndarray, _sanitize_data_for_writing(test_ndarray))
 
-    @unittest.skipUnless(py3, 'Skipping python 3 test')
+    @skipUnless(py3, 'Skipping python 3 test')
     def test__sanitize_data_py3(self):
         # We expect conversion from utf8 to bytestrings and vice-versa
         test_string = 'Avast'
@@ -351,7 +338,7 @@ class TestFast5File(unittest.TestCase):
         self.assertEqual(test_ndarray_bytes,
                          _sanitize_data_for_writing(test_ndarray_utf8))
 
-    @unittest.skipUnless(py3, 'Skipping python 3 test')
+    @skipUnless(py3, 'Skipping python 3 test')
     def test__sanitize_data_emptystrings(self):
         test_ndarray_utf8 = array([('', '')], dtype=[('empty', str),
                                                      ('string', str)])

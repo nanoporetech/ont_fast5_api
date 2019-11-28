@@ -1,26 +1,14 @@
 import os
-import unittest
 import numpy as np
-from shutil import rmtree
 from ont_fast5_api.fast5_file import Fast5File
 from ont_fast5_api.analysis_tools.alignment import AlignmentTools
+from test.helpers import TestFast5ApiHelper
 
-test_data = os.path.join(os.path.dirname(__file__), 'data')
-save_path = os.path.join(os.path.dirname(__file__), 'tmp')
 
-class TestAlignmentTools(unittest.TestCase):
-
-    def setUp(self):
-        self.save_path = save_path
-        if not os.path.exists(self.save_path):
-            os.makedirs(self.save_path)
-
-    def tearDown(self):
-        if os.path.exists(self.save_path):
-            rmtree(self.save_path)
+class TestAlignmentTools(TestFast5ApiHelper):
 
     def test_001_put_and_retrieve(self):
-        fname = os.path.join(self.save_path, 'test_file.fast5')
+        fname = self.generate_temp_filename()
         summary_temp = {'genome': 'Lambda',
                         'genome_start': 100,
                         'genome_end': 200,

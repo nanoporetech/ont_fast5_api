@@ -1,23 +1,11 @@
 import os
-import unittest
 import numpy as np
-from shutil import rmtree
 from ont_fast5_api.fast5_file import Fast5File
 from ont_fast5_api.analysis_tools.event_detection import EventDetectionTools
-
-test_data = os.path.join(os.path.dirname(__file__), 'data')
-save_path = os.path.join(os.path.dirname(__file__), 'tmp')
+from test.helpers import TestFast5ApiHelper, test_data
 
 
-class TestEventDetectionTools(unittest.TestCase):
-    def setUp(self):
-        self.save_path = save_path
-        if not os.path.exists(self.save_path):
-            os.makedirs(self.save_path)
-
-    def tearDown(self):
-        if os.path.exists(self.save_path):
-            rmtree(self.save_path)
+class TestEventDetectionTools(TestFast5ApiHelper):
 
     def test_001_read_events(self):
         # Check that it is recognized properly.

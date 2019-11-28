@@ -11,7 +11,7 @@ from os import path, mkdir, unlink
 from ont_fast5_api.multi_fast5 import MultiFast5File
 from ont_fast5_api.fast5_read import Fast5Read
 from ont_fast5_api.fast5_file import Fast5File
-from ont_fast5_api.conversion_tools.single_to_multi_fast5 import add_read_to_multi_fast5 as copy_read_from_single
+from ont_fast5_api.conversion_tools.single_to_multi_fast5 import add_single_read_to_multi_fast5 as copy_read_from_single
 from ont_fast5_api.conversion_tools.conversion_utils import get_fast5_file_list, get_progress_bar
 from ont_fast5_api.fast5_interface import get_fast5_file
 
@@ -32,7 +32,7 @@ class Fast5Filter:
     """
 
     def __init__(self, input_folder, output_folder, read_list_file, filename_base="batch",
-                 batch_size=4000, threads=1, recursive=False, file_list_file=None):
+                 batch_size=4000, threads=1, recursive=False, file_list_file=None, follow_symlinks=True):
         assert path.isdir(input_folder)
         assert path.isfile(read_list_file)
         assert isinstance(filename_base, str)
@@ -42,7 +42,7 @@ class Fast5Filter:
         self.logger = logging.getLogger(self.__class__.__name__)
 
         self.read_set = get_filter_reads(read_list_file)
-        self.input_f5s = get_fast5_file_list(str(input_folder), recursive)
+        self.input_f5s = get_fast5_file_list(str(input_folder), recursive, follow_symlinks=follow_symlinks)
 
         if len(self.read_set) < 1:
             raise ValueError("No reads in read list file {}".format(read_list_file))
@@ -302,13 +302,15 @@ def main():
                         help="Maximum number of threads to use")
     parser.add_argument('-r', '--recursive', action='store_true', required=False, default=False,
                         help="Search recursively through folders for MultiRead fast5 files")
+    parser.add_argument('--ignore_symlinks', action='store_true',
+                        help="Ignore symlinks when searching recursively for fast5 files")
     parser.add_argument('--file_list', required=False,
                         help="File containing names of files to search in")
     args = parser.parse_args()
 
     multifilter = Fast5Filter(input_folder=args.input, output_folder=args.save_path, filename_base=args.filename_base,
                               read_list_file=args.read_id_list, batch_size=args.batch_size, threads=args.threads,
-                              recursive=args.recursive, file_list_file=args.file_list)
+                              recursive=args.recursive, file_list_file=args.file_list, follow_symlinks=not args.ignore_symlinks)
 
     multifilter.run_batch()
 

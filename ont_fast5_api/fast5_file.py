@@ -47,6 +47,9 @@ mode_docstring = """Supported file modes:
     a        Read/write if exists, create otherwise"""  # Taken from h5py
 
 
+class Fast5FileTypeError(ValueError):
+    pass
+
 class AbstractFast5File(object):
     def __enter__(self):
         return self
@@ -771,19 +774,22 @@ class Fast5File(AbstractFast5File):
         return data
 
     def _initialise_file(self):
-        if self.mode in ['w', 'w-', 'x']:
-            with h5py.File(self.filename, self.mode) as fh:
-                fh.attrs['file_version'] = CURRENT_FAST5_VERSION
-                fh.create_group('Analyses')
-                fh.create_group('Raw/Reads')
-                fh.create_group(self.global_key + 'channel_id')
-                fh.create_group(self.global_key + 'context_tags')
-                fh.create_group(self.global_key + 'tracking_id')
-            self.mode = 'r+'
-        self.status = Fast5Info(self.filename)
-        if self.status.valid:
-            self.handle = h5py.File(self.filename, self.mode)
-            self._is_open = True
+        try:
+            if self.mode in ['w', 'w-', 'x']:
+                with h5py.File(self.filename, self.mode) as fh:
+                    fh.attrs['file_version'] = CURRENT_FAST5_VERSION
+                    fh.create_group('Analyses')
+                    fh.create_group('Raw/Reads')
+                    fh.create_group(self.global_key + 'channel_id')
+                    fh.create_group(self.global_key + 'context_tags')
+                    fh.create_group(self.global_key + 'tracking_id')
+                self.mode = 'r+'
+            self.status = Fast5Info(self.filename)
+            if self.status.valid:
+                self.handle = h5py.File(self.filename, self.mode)
+                self._is_open = True
+        except Exception:
+            raise Fast5FileTypeError("Failed to initialise single-read Fast5File: '{}'".format(self.filename))
 
 
 def _sanitize_data_for_writing(data):

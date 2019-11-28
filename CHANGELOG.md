@@ -4,6 +4,14 @@ All notable changes and fixes to ont_fast5_api will be documented here
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 This project (aspires to) adhere to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] 2019-11-28
+### Added
+- Option to `--ignore_symlinks` in fast5 conversion scripts
+- Explicit check to file_type for detemining single/multi-read files 
+### Fixed
+- `fast5_subset` with single read fast5s was failing
+- unit test data now cleaned up properly
+
 ## [2.0.0] 2019-11-19
 ### Added 
 - Compatibility for VBZ compressed reads
