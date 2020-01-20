@@ -1,6 +1,5 @@
 from argparse import ArgumentParser
 from multiprocessing import Pool
-from collections import deque
 import logging
 import os
 

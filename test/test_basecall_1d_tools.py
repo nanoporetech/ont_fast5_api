@@ -1,31 +1,19 @@
-import os
-import sys
 import numpy as np
 from ont_fast5_api.fast5_file import Fast5File
 from ont_fast5_api.analysis_tools.basecall_1d import Basecall1DTools
 from test.helpers import TestFast5ApiHelper
-
-py3 = sys.version_info.major == 3
 
 
 class TestBasecall1DTools(TestFast5ApiHelper):
 
     def test_001_put_and_retrieve(self):
         fname = self.generate_temp_filename()
-        if py3:
-            dtypes = [('mean', float),
-                      ('start', float),
-                      ('stdv', float),
-                      ('length', float),
-                      ('called_state', '<U5'),
-                      ('move', int)]
-        else:
-            dtypes = [('mean', float),
-                      ('start', float),
-                      ('stdv', float),
-                      ('length', float),
-                      ('called_state', '|S5'),
-                      ('move', int)]
+        dtypes = [('mean', float),
+                  ('start', float),
+                  ('stdv', float),
+                  ('length', float),
+                  ('called_state', '<U5'),
+                  ('move', int)]
         data1 = np.zeros(10, dtype=dtypes)
         data1['mean'] = [10.0, 15.0, 8.5, 7.2, 13.6, 9.4, 11.8, 10.1, 4.2, 10.9]
         data1['stdv'] = [0.7, 0.9, 1.0, 1.1, 0.75, 0.6, 0.83, 1.12, 9.45, 2.9]

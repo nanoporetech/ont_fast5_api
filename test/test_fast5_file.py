@@ -2,21 +2,15 @@ try:
     from ConfigParser import ConfigParser
 except:  # python3
     from configparser import ConfigParser
-import numpy as np
-import os
-import sys
 
-from numpy import array, ndarray
+import os
 from shutil import copyfile
 from tempfile import NamedTemporaryFile
-from unittest import skipUnless, skipIf
 
 from ont_fast5_api import CURRENT_FAST5_VERSION
 from ont_fast5_api.fast5_info import Fast5Info, _clean
-from ont_fast5_api.fast5_file import Fast5File, _sanitize_data_for_reading, _sanitize_data_for_writing
+from ont_fast5_api.fast5_file import Fast5File
 from test.helpers import TestFast5ApiHelper, test_data
-
-py3 = sys.version_info.major == 3
 
 
 class TestFast5File(TestFast5ApiHelper):
@@ -166,24 +160,6 @@ class TestFast5File(TestFast5ApiHelper):
             channel_info = fh.get_channel_info()
             self.assertEqual(1, channel_info['channel_number'])
 
-    def test_fast5_info__clean(self):
-        self.assertEqual(_clean(1), 1)
-        self.assertEqual(_clean('str'), 'str')
-        self.assertTrue(isinstance(_clean('str'), str))
-
-        test_str = array('Hello!', dtype=str)
-        self.assertEqual(type(test_str), ndarray)
-        self.assertEqual(_clean(test_str), 'Hello!')
-
-        self.assertEqual(_clean(array([1, 2, 3])), [1, 2, 3])
-
-    @skipUnless(py3, 'Skipping python 3 test')
-    def test_fast5_info__clean_py3(self):
-        # _clean should convert byte strings into python3 utf-8 ones
-        test_str = array(b'Hello!', dtype=bytes)
-        self.assertEqual(type(test_str), ndarray)
-        self.assertEqual(_clean(test_str), 'Hello!')
-
     def test_fast5_add_and_get_chain(self):
         fname = self.generate_temp_filename()
         group_name1 = 'First_000'
@@ -218,7 +194,7 @@ class TestFast5File(TestFast5ApiHelper):
             chain = [(component2, group_name2), (component1, group_name1)]
             self.assertEqual(fast5.get_chain(group_name2), chain)
 
-    def test_fast5__add_group(self):
+    def test_fast5_add_group(self):
         fname = self.generate_temp_filename()
         group_name = 'First_000'
         component = 'first'
@@ -295,56 +271,3 @@ class TestFast5File(TestFast5ApiHelper):
             fast5.set_analysis_config(group_name, config)
             get_config = fast5.get_analysis_config(group_name)
             self.assertEqual(get_config['section']['key'], 'value')
-
-    @skipIf(py3, 'Skipping python 2 test')
-    def test__sanitize_data_py2(self):
-        # We expect nothing to get sanitized in python 2
-        test_string = 'Avast'
-        self.assertEqual(test_string, _sanitize_data_for_reading(test_string))
-        self.assertEqual(test_string, _sanitize_data_for_writing(test_string))
-
-        test_array = array('Arr', dtype=str)
-        self.assertEqual(test_array, _sanitize_data_for_reading(test_array))
-        self.assertEqual(test_array, _sanitize_data_for_writing(test_array))
-
-        test_ndarray = array([('Narr', 0)], dtype=[('string', (str, 4)),
-                                                   ('int', int)])
-        self.assertEqual(test_ndarray, _sanitize_data_for_reading(test_ndarray))
-        self.assertEqual(test_ndarray, _sanitize_data_for_writing(test_ndarray))
-
-    @skipUnless(py3, 'Skipping python 3 test')
-    def test__sanitize_data_py3(self):
-        # We expect conversion from utf8 to bytestrings and vice-versa
-        test_string = 'Avast'
-        self.assertEqual(test_string,
-                         _sanitize_data_for_reading(test_string.encode()))
-        self.assertEqual(test_string.encode(),
-                         _sanitize_data_for_writing(test_string))
-
-        test_array = array('Arr', dtype=str)
-        self.assertEqual(test_array,
-                         _sanitize_data_for_reading(np.char.encode(test_array)))
-        self.assertEqual(np.char.encode(test_array),
-                         _sanitize_data_for_writing(test_array))
-
-        test_ndarray_utf8 = array([('Narr', 0)],
-                                  dtype=[('string', (str, 4)),
-                                         ('int', int)])
-        test_ndarray_bytes = array([(b'Narr', 0)],
-                                   dtype=[('string', (bytes, 4)),
-                                          ('int', int)])
-        self.assertEqual(test_ndarray_utf8,
-                         _sanitize_data_for_reading(test_ndarray_bytes))
-        self.assertEqual(test_ndarray_bytes,
-                         _sanitize_data_for_writing(test_ndarray_utf8))
-
-    @skipUnless(py3, 'Skipping python 3 test')
-    def test__sanitize_data_emptystrings(self):
-        test_ndarray_utf8 = array([('', '')], dtype=[('empty', str),
-                                                     ('string', str)])
-        test_ndarray_bytes = array([('', '')], dtype=[('empty', bytes),
-                                                      ('string', bytes)])
-        with self.assertRaises(TypeError):
-            _sanitize_data_for_reading(test_ndarray_bytes)
-        with self.assertRaises(TypeError):
-            _sanitize_data_for_writing(test_ndarray_utf8)

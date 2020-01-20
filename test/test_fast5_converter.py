@@ -1,9 +1,4 @@
-from __future__ import division
-
-try:
-    from unittest.mock import patch
-except ImportError:  # python2 compatibility
-    from mock import patch
+from unittest.mock import patch
 
 import os
 import h5py

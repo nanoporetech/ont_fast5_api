@@ -1,16 +1,12 @@
 import h5py
 import os
-import unittest
+import shutil
+from unittest.mock import patch
 
-try:
-    from unittest.mock import patch
-except ImportError:  # python2 compatibility
-    from mock import patch
-
-from ont_fast5_api.compression_settings import VBZ
+from ont_fast5_api.compression_settings import VBZ, GZIP
+from ont_fast5_api.conversion_tools.check_file_compression import check_read_compression, check_compression
 from ont_fast5_api.conversion_tools.compress_fast5 import compress_read_from_multi, compress_read_from_single, \
     compress_batch
-from ont_fast5_api.conversion_tools.conversion_utils import get_fast5_file_list
 from ont_fast5_api.fast5_file import Fast5File, EmptyFast5
 from ont_fast5_api.fast5_info import ReadInfo
 from ont_fast5_api.fast5_interface import get_fast5_file
@@ -52,7 +48,7 @@ class TestVbzReadWrite(TestFast5ApiHelper):
             # First check the data comes back in an appropriate form
             self.assertEqual(input_data, list(raw))
             # Then check the types are as they should be under the hood
-            filters = read.compression_filters
+            filters = read.raw_compression_filters
             self.assertTrue(str(VBZ.compression) in filters)
             self.assertEqual(VBZ.compression_opts, filters[str(VBZ.compression)])
 
@@ -70,7 +66,7 @@ class TestVbzReadWrite(TestFast5ApiHelper):
             self.assertEqual(input_data, list(raw))
 
             # Then check the types are as they should be under the hood
-            filters = fast5.compression_filters
+            filters = fast5.raw_compression_filters
             self.assertTrue(str(VBZ.compression) in filters)
             self.assertEqual(VBZ.compression_opts, filters[str(VBZ.compression)])
 
@@ -78,20 +74,15 @@ class TestVbzReadWrite(TestFast5ApiHelper):
 class TestVbzConvert(TestFast5ApiHelper):
     run_id = "123abc"
 
-    def assertUncompressed(self, read):
-        filters = read.compression_filters
-        # Check we have don't have VBZ filters
-        ## TODO we should be able to check what the compression is from an AbstractCompression object
-        self.assertFalse(str(VBZ.compression) in filters)
-
-    def assertCompressed(self, read):
-        filters = read.compression_filters
-        # Check we only have 1 filter
-        self.assertEqual(1, len(filters))
-        # Check it is the VBZ filter
-        self.assertTrue(str(VBZ.compression) in filters)
-        # Check it has the correct opts
-        self.assertEqual(VBZ.compression_opts, filters[str(VBZ.compression)])
+    def assertCompressed(self, data_path, expected_compression, read_count, file_count):
+        files = set()
+        read_ids = set()
+        for compression, read_id, filepath in check_compression(data_path, False, False, check_all_reads=True):
+            self.assertEqual(expected_compression, compression)
+            read_ids.add(read_id)
+            files.add(filepath)
+        self.assertEqual(read_count, len(read_ids))
+        self.assertEqual(file_count, len(files))
 
     def test_compress_read_from_multi(self):
         target_compression = VBZ
@@ -101,12 +92,12 @@ class TestVbzConvert(TestFast5ApiHelper):
             input_read = input_f5.get_read(read_id)
 
             # Input read should be uncompressed on the way in:
-            self.assertUncompressed(input_read)
+            self.assertEqual(check_read_compression(input_read), GZIP)
 
             compress_read_from_multi(output_f5, input_read, target_compression)
 
             output_read = output_f5.get_read(read_id)
-            self.assertCompressed(output_read)
+            self.assertEqual(check_read_compression(output_read), VBZ)
 
     def test_compress_read_from_single(self):
         with get_fast5_file(os.path.join(test_data, "single_reads", "read0.fast5"), "r") as input_f5, \
@@ -115,44 +106,34 @@ class TestVbzConvert(TestFast5ApiHelper):
             input_read = input_f5.get_read(read_id)
 
             # Input read should be uncompressed on the way in:
-            self.assertUncompressed(input_read)
+            self.assertEqual(check_read_compression(input_read), GZIP)
 
             compress_read_from_single(output_f5, input_read, target_compression=VBZ)
 
             output_read = output_f5.get_read(read_id)
-            self.assertCompressed(output_read)
+            self.assertEqual(check_read_compression(output_read), VBZ)
 
     @patch('ont_fast5_api.conversion_tools.compress_fast5.get_progress_bar')
     def test_conversion_script_multi(self, mock_pbar):
         input_folder = os.path.join(test_data, 'multi_read')
         compress_batch(input_folder=input_folder, output_folder=self.save_path, target_compression=VBZ)
-
-        count_files = 0
-        count_reads = 0
-        for out_file in get_fast5_file_list(self.save_path, recursive=True, follow_symlinks=True):
-            count_files += 1
-            with get_fast5_file(out_file) as f5:
-                self.assertTrue(isinstance(f5, MultiFast5File))
-                for read in f5.get_reads():
-                    self.assertCompressed(read)
-                    count_reads += 1
-        self.assertEqual(1, count_files)
-        self.assertEqual(4, count_reads)
+        self.assertCompressed(self.save_path, VBZ, read_count=4, file_count=1)
 
     @patch('ont_fast5_api.conversion_tools.compress_fast5.get_progress_bar')
     def test_conversion_script_single(self, mock_pbar):
         input_folder = os.path.join(test_data, 'single_reads')
         compress_batch(input_folder=input_folder, output_folder=self.save_path, target_compression=VBZ)
 
-        count_files = 0
-        count_reads = 0
-        for out_file in get_fast5_file_list(self.save_path, recursive=True, follow_symlinks=True):
-            count_files += 1
-            with get_fast5_file(out_file) as f5:
-                self.assertTrue(isinstance(f5, Fast5File))
-                for read in f5.get_reads():
-                    self.assertCompressed(read)
-                    count_reads += 1
+        self.assertCompressed(self.save_path, VBZ, read_count=4, file_count=4)
 
-        self.assertEqual(4, count_files)
-        self.assertEqual(4, count_reads)
+    @patch('ont_fast5_api.conversion_tools.compress_fast5.get_progress_bar')
+    def test_compress_in_place(self, mock_pbar):
+        for input_file in os.listdir(os.path.join(test_data, 'single_reads')):
+            # We copy file by file as copytree won't work to an existing directory
+            shutil.copy(os.path.join(test_data, 'single_reads', input_file), self.save_path)
+
+        self.assertCompressed(self.save_path, GZIP, read_count=4, file_count=4)
+        in_files = set(os.listdir(self.save_path))
+        compress_batch(self.save_path, output_folder=None, target_compression=VBZ, in_place=True)
+        self.assertCompressed(self.save_path, VBZ, read_count=4, file_count=4)
+        self.assertEqual(in_files, set(os.listdir(self.save_path)))

@@ -1,6 +1,5 @@
-import h5py
 
-from ont_fast5_api.fast5_file import Fast5File
+from ont_fast5_api.fast5_file import Fast5File, Fast5FileTypeError
 from ont_fast5_api.fast5_info import _clean
 from ont_fast5_api.multi_fast5 import MultiFast5File
 
@@ -46,5 +45,4 @@ def is_multi_read(filepath):
             return False
         elif file_type == BULK_FAST5:
             raise NotImplementedError("ont_fast5_api does not support bulk fast files: {}".format(filepath))
-
-
+        raise Fast5FileTypeError("Unknown file type: '{}' for file: {}".format(file_type, filepath))

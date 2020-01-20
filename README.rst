@@ -81,7 +81,7 @@ This script converts folders containing ``single_read_fast5`` files into
         [optional] -t, --threads <(int) number of CPU threads to use; default=1>
         [optional] -f, --filename_base <(string) name for new multi_read file; default="batch" (see note-1)>
         [optional] -n, --batch_size <(int) number of single_reads to include in each multi_read file; default=4000>
-        [optional] --recursive <(bool) if included, rescursively search sub-directories for single_read files; default=False>
+        [optional] --recursive <if included, recursively search sub-directories for single_read files>
 
 *note-1:* newly created ``multi_read`` files require a name. This is the
 ``filename_base`` with the batch count and ``.fast5`` appended to it; e.g.
@@ -106,7 +106,7 @@ This script converts folders containing ``multi_read_fast5`` files into
         -i, --input_path <(path) folder containing multi_read_fast5 files>
         -s, --save_path <(path) to folder where single_read fast5 files will be output>
         [optional] -t, --threads <(int) number of CPU threads to use; default=1>
-        [optional] --recursive <(bool) if included, recursively search sub-directories for multi_read files; default=False>
+        [optional] --recursive <if included, recursively search sub-directories for multi_read files>
 
 **example usage**::
 
@@ -127,7 +127,7 @@ This script extracts reads from ``multi_read_fast5_file(s)`` based on a list of 
         -l,--read_id_list <(file) either sequencing_summary.txt file or a file containing a list of read_ids>
         [optional] -f, --filename_base <(string) name for new multi_read file; default="batch" (see note-1)>
         [optional] -n, --batch_size <(int) number of single_reads to include in each multi_read file; default=4000>
-        [optional] --recursive <(bool) if included, recursively search sub-directories for single_read files; default=False>
+        [optional] --recursive <if included, recursively search sub-directories for single_read files>
 
 **example usage**::
 
@@ -150,12 +150,12 @@ This script copies and converts raw data between `vbz` and `gzip` compression fo
         -s, --save_path <(path) to folder where single_read fast5 files will be output>
         -c, --compression <(str) [vbz, gzip] target compression format>
         [optional] -t, --threads <(int) number of CPU threads to use; default=1>
-        [optional] --recursive <(bool) if included, recursively search sub-directories for multi_read files; default=False>
+        [optional] --recursive <if included, recursively search sub-directories for fast5 files>
 
 **example usage**::
 
     compress_fast5 --input_path /data/uncompressed_reads --save_path /data/compressed_reads
-        --compression vbz --recursive True --threads 40
+        --compression vbz --recursive --threads 40
 
 Where ``/data/uncompressed_reads`` and/or its subfolders contain .fast5 files. The output will be a copy of the input
 folder structure containing compressed reads preserving both the folder structure and file type.

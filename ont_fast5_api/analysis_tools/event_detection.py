@@ -74,7 +74,7 @@ class EventDetectionTools(BaseTool):
                 raise Exception('Specified read does not exist.')
         group = '{}/Reads/Read_{}'.format(self.group_name, read_number)
         attrs = self.handle.get_analysis_attributes(group)
-        dataset = self.handle.get_analysis_dataset(group, 'Events', proxy=True)
+        dataset = self.handle.get_analysis_dataset(group, 'Events', skip_decoding=True)
         if dataset is None:
             raise Exception('Read number {} has no event data.'.format(read_number))
         if time_in_seconds and dataset['start'].dtype.kind in ['i', 'u']:
@@ -107,7 +107,7 @@ class EventDetectionTools(BaseTool):
             if read_number not in read_numbers:
                 raise Exception('Specified read does not exist.')
         group = '{}/Reads/Read_{}'.format(self.group_name, read_number)
-        dataset = self.handle.get_analysis_dataset(group, 'Events', proxy=True)
+        dataset = self.handle.get_analysis_dataset(group, 'Events', skip_decoding=True)
         return dataset is not None
 
 

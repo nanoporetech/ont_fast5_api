@@ -1,11 +1,7 @@
-import os
-import sys
 import numpy as np
 from ont_fast5_api.fast5_file import Fast5File
 from ont_fast5_api.analysis_tools.basecall_2d import Basecall2DTools
 from test.helpers import TestFast5ApiHelper
-
-py3 = sys.version_info.major == 3
 
 
 class TestBasecall2DTools(TestFast5ApiHelper):
@@ -16,10 +12,7 @@ class TestBasecall2DTools(TestFast5ApiHelper):
         data1 = np.zeros(10, dtype=dtypes)
         data1['template'] = [0, 1, 2, 2, 3, 4, 5, 6, 7, 8]
         data1['complement'] = [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
-        if py3:
-            dtypes.append(('model_state', '<U5'))
-        else:
-            dtypes.append(('model_state', '|S5'))
+        dtypes.append(('model_state', '<U5'))
         data2 = np.zeros(10, dtype=dtypes)
         data2['template'] = data1['template']
         data2['complement'] = data1['complement']

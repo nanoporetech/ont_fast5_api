@@ -1,6 +1,5 @@
 import os
 import re
-import sys
 from setuptools import setup, find_packages
 
 __pkg_name__ = 'ont_fast5_api'
@@ -23,10 +22,7 @@ with open('README.rst') as readme:
 
 installation_requirements = []
 if 'IGNORE_INCLUDES' not in os.environ:
-    installation_requirements = ['h5py>=2.6', 'numpy>=1.11',
-                                 'six>=1.10', 'progressbar33>=2.3.1']
-    if sys.version_info.major == 2:
-        installation_requirements.append('mock==2.0.0')
+    installation_requirements = ['h5py>=2.6', 'numpy>=1.11', 'progressbar33>=2.3.1']
 
 setup(name=__pkg_name__.replace("_", "-"),
       author='Oxford Nanopore Technologies, Limited',
@@ -43,6 +39,7 @@ setup(name=__pkg_name__.replace("_", "-"),
           "single_to_multi_fast5={}.conversion_tools.single_to_multi_fast5:main".format(__pkg_name__),
           "fast5_subset={}.conversion_tools.fast5_subset:main".format(__pkg_name__),
           "compress_fast5={}.conversion_tools.compress_fast5:main".format(__pkg_name__),
+          "check_compression={}.conversion_tools.check_file_compression:main".format(__pkg_name__),
       ]},
       classifiers=[
           'Development Status :: 5 - Production/Stable',

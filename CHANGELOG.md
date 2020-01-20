@@ -4,6 +4,24 @@ All notable changes and fixes to ont_fast5_api will be documented here
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 This project (aspires to) adhere to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] 2020-01-20 
+### Removed
+- python2 compatibility
+### Fixed
+- minor documentation errors: https://github.com/nanoporetech/ont_fast5_api/issues/28
+
+## [2.1.0] 2019-12-16 
+### Added
+- Script to check the compression type of fast5 files in a folder
+- `compress_fast5` can now be used `--in_place`
+### Fixed
+- Reading arrays with padded strings now succeeds (on h5py>2.7)
+- Compatibility bugs with h5py==2.6 now raises appropriate errors
+- Fast5File now has attribute read_id to match documentation
+### Changed
+- Now use standard settings for gzip compression (gzip=1, shuffle=None)
+- Inverted dependency between `Fast5File` and `Fast5Read` so `Fast5Read` is now the primary object
+
 ## [2.0.1] 2019-11-28
 ### Added
 - Option to `--ignore_symlinks` in fast5 conversion scripts

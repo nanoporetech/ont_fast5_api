@@ -271,10 +271,10 @@ def read_generator(input_file, read_set):
 
 
 def copy_read_to_multi_fast5(read, output_f5):
-    if isinstance(read, Fast5Read):
-        copy_read_from_multi(multi_f5=output_f5, read=read)
-    elif isinstance(read, Fast5File):
+    if isinstance(read, Fast5File):
         copy_read_from_single(multi_f5=output_f5, single_f5=read)
+    elif isinstance(read, Fast5Read):
+        copy_read_from_multi(multi_f5=output_f5, read=read)
     else:
         raise TypeError("Group type {} can't be copied".format(type(read)))
 

@@ -1,10 +1,10 @@
 """ Helper class for getting information about a fast5 file.
 """
 import os
-import sys
 import h5py
-import numpy as np
 
+# This unused import is included for backwards compatibilty and can be removed in future.
+from ont_fast5_api.data_sanitisation import _clean
 
 class ReadInfo(object):
     """ This object provides basic details about a read.
@@ -164,24 +164,3 @@ class Fast5Info(object):
             # There must be either raw data or event data (or both).
             if len(self.read_info) == 0:
                 self.valid = False
-
-
-def _clean(value):
-    """ Convert numpy numeric types to their python equivalents. """
-    if isinstance(value, np.ndarray):
-        if value.dtype.kind == 'S':
-            return np.char.decode(value).tolist()
-        else:
-            return value.tolist()
-    elif type(value).__module__ == np.__name__:
-        # h5py==2.8.0 on windows sometimes fails to cast this from an np.float64 to a python.float
-        # We have explicitly cast in Albacore (merge 488) to avoid this bug, since casting here could be dangerous
-        # https://github.com/h5py/h5py/issues/1051
-        conversion = value.item() # np.asscalar(value) was deprecated in v1.16
-        if sys.version_info.major == 3 and isinstance(conversion, bytes):
-            conversion = conversion.decode()
-        return conversion
-    elif sys.version_info.major == 3 and isinstance(value, bytes):
-        return value.decode()
-    else:
-        return value

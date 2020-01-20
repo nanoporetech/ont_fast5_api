@@ -34,8 +34,7 @@ class TestMultiFast5(TestFast5ApiHelper):
 
             # Test we can get a read from the file and it has the interface we expect
             read_0 = multi_f5.get_read(read_ids[0])
-            self.assertEqual(type(read_0), Fast5Read)
-            self.assertTrue(issubclass(type(read_0), Fast5File))
+            self.assertTrue(isinstance(read_0, Fast5Read))
 
             # Test we cannot get a read which doesn't exit
             with self.assertRaises(KeyError):

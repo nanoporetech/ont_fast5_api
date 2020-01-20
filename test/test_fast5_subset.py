@@ -1,11 +1,7 @@
 import os
 import numpy
 from glob import glob
-
-try:
-    from unittest.mock import patch
-except ImportError:  # python2 compatibility
-    from mock import patch
+from unittest.mock import patch
 
 from ont_fast5_api.conversion_tools.fast5_subset import Fast5Filter, read_generator, extract_selected_reads
 from ont_fast5_api.multi_fast5 import MultiFast5File
@@ -15,7 +11,7 @@ from test.helpers import TestFast5ApiHelper, test_data
 
 class TestFast5Subset(TestFast5ApiHelper):
     input_multif5_path = os.path.join(test_data, "multi_read", "batch_0.fast5")
-    read_set = {"568b93db", "9171d66b"}
+    read_set = {"fe85b517-62ee-4a33-8767-41cab5d5ab39", "fe9374ee-b86a-4ca4-81dc-ac06e3297728"}
 
     def test_read_generator(self):
         count = 0

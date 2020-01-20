@@ -1,5 +1,6 @@
 import h5py
-from . import fast5_file as f5f
+import warnings
+from ont_fast5_api import fast5_file as f5f
 
 
 class FileToDict(object):
@@ -13,7 +14,7 @@ class FileToDict(object):
         else:
             self.contents[name] = 'dataset'
             self.contents['{}.data'.format(name)] = \
-                str(f5f._sanitize_data_for_reading(obj[()]))
+                str(f5f._sanitize_data_for_reading(obj))
             self.contents['{}.cols'.format(name)] = obj.dtype.names
         attrdict = {}
         for item in obj.attrs:
@@ -30,6 +31,10 @@ def compare_hdf_files(file1, file2):
 
     :returns True if they are the same.
     """
+    warnings.simplefilter("default")
+    warnings.warn("'compare_hdf_files': HDF5 comparison is deprecated. \n"
+                  "If this feature is still required please contact the project maintainers",
+                  DeprecationWarning)
     data1 = FileToDict()
     data2 = FileToDict()
     scanner1 = data1.scan

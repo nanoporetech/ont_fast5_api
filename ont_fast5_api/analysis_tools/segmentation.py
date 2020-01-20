@@ -168,7 +168,7 @@ class SegmentationTools(BaseTool):
         read_info = self.handle.status.read_info[0] # We assume only one read.
         read_number = read_info.read_number
         event_table_group = '{}/Reads/Read_{}'.format(evdet_group, read_number)
-        dataset = self.handle.get_analysis_dataset(event_table_group, 'Events', proxy=True)
+        dataset = self.handle.get_analysis_dataset(event_table_group, 'Events', skip_decoding=True)
         return evdet_group, dataset
 
     def _get_raw_info(self, summary):
