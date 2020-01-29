@@ -3,7 +3,6 @@
 import numpy as np
 
 from ont_fast5_api.analysis_tools.base_tool import BaseTool
-from ont_fast5_api.fast5_file import Fast5File
 
 
 class EventDetectionTools(BaseTool):
@@ -110,13 +109,12 @@ class EventDetectionTools(BaseTool):
         dataset = self.handle.get_analysis_dataset(group, 'Events', skip_decoding=True)
         return dataset is not None
 
-
     ##########################
     #
     #  Private methods below
     #
     ##########################
-    
+
     def _new_analysis(self, meta, config):
         if self.handle.mode == 'r':
             raise Exception('Cannot create new event detection group. File is not open for writing.')

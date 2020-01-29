@@ -3,7 +3,6 @@
 import numpy as np
 
 from ont_fast5_api.analysis_tools.base_tool import BaseTool
-from ont_fast5_api.fast5_file import Fast5File
 from ont_fast5_api.analysis_tools.event_detection import EventDetectionTools
 
 
@@ -162,7 +161,7 @@ class SegmentationTools(BaseTool):
             evdet_group = evdet_group[9:]
         if evdet_group is None:
             return None
-        # We directly use the Fast5File interface here, rather than the
+        # We directly use the Fast5Read interface here, rather than the
         # EventDetectionTools one, because we don't want to load the entire
         # event table into memory.
         read_info = self.handle.status.read_info[0] # We assume only one read.

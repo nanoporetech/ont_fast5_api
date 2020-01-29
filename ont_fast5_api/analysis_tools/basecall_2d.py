@@ -1,10 +1,7 @@
 """ Helper class for working with 2D basecall type analyses.
 """
-import numpy as np
 import warnings
-from ont_fast5_api.analysis_tools.base_tool import BaseTool
 from ont_fast5_api.analysis_tools.basecall_1d import Basecall1DTools
-from ont_fast5_api.fast5_file import Fast5File
 
 
 class Basecall2DTools(Basecall1DTools):

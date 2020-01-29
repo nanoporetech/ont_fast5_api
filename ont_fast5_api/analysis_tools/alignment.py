@@ -5,6 +5,7 @@ import numpy as np
 from ont_fast5_api.analysis_tools.base_tool import BaseTool
 from ont_fast5_api.fast5_file import Fast5File
 from ont_fast5_api.analysis_tools.segmentation import SegmentationTools
+from ont_fast5_api.fast5_read import Fast5Read
 
 
 class AlignmentTools(BaseTool):
@@ -34,7 +35,7 @@ class AlignmentTools(BaseTool):
         the specified group has a "component" attribute, and its value is not
         "alignment", an exception will be thrown.
         """
-        if isinstance(source, Fast5File):
+        if isinstance(source, Fast5Read):
             self.handle = source
             self.close_handle_when_done = False
         elif isinstance(source, str):

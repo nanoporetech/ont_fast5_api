@@ -3,7 +3,6 @@
 import numpy as np
 
 from ont_fast5_api.analysis_tools.base_tool import BaseTool
-from ont_fast5_api.fast5_file import Fast5File
 
 
 class Basecall1DTools(BaseTool):

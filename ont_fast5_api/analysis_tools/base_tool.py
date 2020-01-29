@@ -1,7 +1,8 @@
 import abc
 from abc import abstractmethod
 
-from ont_fast5_api.fast5_file import Fast5File
+from ont_fast5_api.fast5_file import Fast5File, Fast5FileTypeError
+from ont_fast5_api.fast5_read import Fast5Read
 
 
 class BaseTool(object):
@@ -35,13 +36,16 @@ class BaseTool(object):
         the specified group has a "component" attribute, and its value does not
         match self.analysis_id, an exception will be thrown.
         """
-        if isinstance(source, Fast5File):
+        if isinstance(source, Fast5Read):
             self.filename = source.filename  # Useful for debugging purposes
             self.handle = source
             self.close_handle_when_done = False
         elif isinstance(source, str):
             self.filename = source  # Useful for debugging purposes
-            self.handle = Fast5File(source, mode)
+            try:
+                self.handle = Fast5File(source, mode)
+            except Fast5FileTypeError :
+                raise NotImplementedError("AnalysisTools do not support accessing MultiReadFast5 files by filepath")
             self.close_handle_when_done = True
         else:
             raise KeyError('Unrecognized type for argument "source": {}'.format(source))

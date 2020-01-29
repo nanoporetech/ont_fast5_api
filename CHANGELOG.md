@@ -4,7 +4,11 @@ All notable changes and fixes to ont_fast5_api will be documented here
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 This project (aspires to) adhere to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [3.0.0] 2020-01-20 
+## [3.0.1] 2020-01-29
+### Fixed
+- Basecall1DTools could not load data from a Fast5Read
+
+## [3.0.0] 2020-01-20
 ### Removed
 - python2 compatibility
 ### Fixed
