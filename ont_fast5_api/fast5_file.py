@@ -277,8 +277,6 @@ class Fast5File(Fast5Read):
             self.status = Fast5Info(self.filename)
             if self.status.valid:
                 self.handle = h5py.File(self.filename, self.mode)
-
-
         except Exception:
             raise Fast5FileTypeError("Failed to initialise single-read Fast5File: '{}'".format(self.filename))
 

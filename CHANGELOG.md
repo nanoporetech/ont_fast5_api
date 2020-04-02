@@ -4,6 +4,18 @@ All notable changes and fixes to ont_fast5_api will be documented here
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 This project (aspires to) adhere to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] 2020-02-04
+### Added
+- Hardlinking of metadata to prevent duplication and reduce filesize
+- Ability to enable compression when using `fast5_subset` and `single_to_multi`
+### Fixed
+- `fast5_subset` thread pool could sometimes close before all tasks were completed
+- `fast5_subset` will create output directory if it doesn't exist
+
+## [3.0.2] 2020-03-17
+### Fixed
+- Comparison of file_versions could throw an error
+
 ## [3.0.1] 2020-01-29
 ### Fixed
 - Basecall1DTools could not load data from a Fast5Read

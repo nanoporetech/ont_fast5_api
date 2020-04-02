@@ -61,8 +61,10 @@ class Fast5Read(AbstractFast5):
         self.handle = parent.handle["read_" + read_id]
         self.read_id = read_id
 
+
     def get_run_id(self):
-        return self.handle[self.global_key + 'tracking_id'].attrs['run_id']
+        DeprecationWarning("'read.get_run_id()' will be deprecated. Use the property 'read.run_id' instead")
+        return self.run_id
 
     def get_read_id(self):
         DeprecationWarning("'read.get_read_id()' will be deprecated. Use the property 'read.read_id' instead")
@@ -79,6 +81,10 @@ class Fast5Read(AbstractFast5):
     @property
     def raw_compression_filters(self):
         return self.handle[self.raw_dataset_name]._filters
+
+    @property
+    def run_id(self):
+        return self.handle[self.global_key + 'tracking_id'].attrs['run_id']
 
     def add_raw_data(self, data, attrs=None, compression=VBZ):
         """ Add raw data for a read.
@@ -322,8 +328,8 @@ class Fast5Read(AbstractFast5):
             self._add_group(self.global_key + 'context_tags', data)
 
     def add_read(self, read_number, read_id, start_time, duration, mux, median_before):
-        raise NotImplementedError("Cannot add_read() to a Fast5Read(). "
-                                  "Use MultiFast5File.create_read() instead")
+        raise NotImplementedError("Cannot add_existing_read() to a Fast5Read(). "
+                                  "Use MultiFast5File.create_empty_read() instead")
 
     def add_log(self, group_name, field_name, log_string):
         """ Add a log the file.

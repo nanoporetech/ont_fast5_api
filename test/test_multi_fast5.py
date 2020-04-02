@@ -17,7 +17,7 @@ class TestMultiFast5(TestFast5ApiHelper):
         filename = self.generate_temp_filename()
         with MultiFast5File(filename, 'w') as multi_f5:
             for read_id in read_ids:
-                multi_f5.create_read(read_id, run_id)
+                multi_f5.create_empty_read(read_id, run_id)
         return filename
 
     def test_read_interface(self):
@@ -30,7 +30,7 @@ class TestMultiFast5(TestFast5ApiHelper):
 
             # Try and add another read with the same read_id and expect error
             with self.assertRaises(ValueError):
-                multi_f5.create_read(read_ids[0], run_id)
+                multi_f5.create_empty_read(read_ids[0], run_id)
 
             # Test we can get a read from the file and it has the interface we expect
             read_0 = multi_f5.get_read(read_ids[0])

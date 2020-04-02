@@ -1,8 +1,17 @@
+import logging
 import os
 from tempfile import TemporaryDirectory, _get_candidate_names
 import unittest
 
 test_data = os.path.join(os.path.dirname(__file__), 'data')
+
+
+def disable_logging(test_func):
+    def do_test(self, *args, **kwargs):
+        logging.disable(logging.CRITICAL)
+        test_func(self, *args, **kwargs)
+
+    return do_test
 
 
 class TestFast5ApiHelper(unittest.TestCase):

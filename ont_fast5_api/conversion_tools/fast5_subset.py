@@ -6,12 +6,10 @@ from argparse import ArgumentParser
 from time import sleep
 import logging
 import csv
-from os import path, mkdir, unlink
+from os import makedirs, path, unlink
 
+from ont_fast5_api.compression_settings import COMPRESSION_MAP
 from ont_fast5_api.multi_fast5 import MultiFast5File
-from ont_fast5_api.fast5_read import Fast5Read
-from ont_fast5_api.fast5_file import Fast5File
-from ont_fast5_api.conversion_tools.single_to_multi_fast5 import add_single_read_to_multi_fast5 as copy_read_from_single
 from ont_fast5_api.conversion_tools.conversion_utils import get_fast5_file_list, get_progress_bar
 from ont_fast5_api.fast5_interface import get_fast5_file
 
@@ -32,7 +30,8 @@ class Fast5Filter:
     """
 
     def __init__(self, input_folder, output_folder, read_list_file, filename_base="batch",
-                 batch_size=4000, threads=1, recursive=False, file_list_file=None, follow_symlinks=True):
+                 batch_size=4000, threads=1, recursive=False, file_list_file=None, follow_symlinks=True,
+                 target_compression=None):
         assert path.isdir(input_folder)
         assert path.isfile(read_list_file)
         assert isinstance(filename_base, str)
@@ -43,6 +42,7 @@ class Fast5Filter:
 
         self.read_set = get_filter_reads(read_list_file)
         self.input_f5s = get_fast5_file_list(str(input_folder), recursive, follow_symlinks=follow_symlinks)
+        self.target_compression = target_compression
 
         if len(self.read_set) < 1:
             raise ValueError("No reads in read list file {}".format(read_list_file))
@@ -68,9 +68,7 @@ class Fast5Filter:
         num_outputs = int(ceil(len(self.read_set) / float(batch_size)))
         self.num_workers = min(threads, num_outputs, len(self.input_f5s))
 
-        if not path.exists(output_folder):
-            mkdir(output_folder)
-
+        makedirs(output_folder, exist_ok=True)
         self.filename_mapping_file = path.join(output_folder, "filename_mapping.txt")
         if path.exists(self.filename_mapping_file):
             self.logger.info("overwriting filename mapping file {}".format(self.filename_mapping_file))
@@ -108,7 +106,7 @@ class Fast5Filter:
                 self.pool = pool
                 self._launch_async_tasks()
 
-                while self.tasks:
+                while self.tasks or (self.input_f5s and self.read_set):
                     sleep(1)
 
                 self.pool.close()
@@ -141,7 +139,7 @@ class Fast5Filter:
             self.pool.apply_async(func=extract_selected_reads, args=args_tuple, callback=self._callback)
 
             self.tasks.append(0)
-            if len(self.tasks) >= self.num_workers:
+            if len(self.tasks) > self.num_workers:
                 break
 
     def _callback(self, result):
@@ -150,9 +148,9 @@ class Fast5Filter:
         :param result: tuple
         :return:
         """
-        self.tasks.pop()
         self._update_file_lists(*result)
         self._launch_async_tasks()
+        self.tasks.pop()
 
     def _update_file_lists(self, reads, out_file, in_file):
         """
@@ -193,7 +191,7 @@ class Fast5Filter:
             out_file = self.available_out_files.pop()
             in_file = self.input_f5s.pop()
             count = self.batch_size - len(self.out_files[out_file])
-            yield in_file, out_file, self.read_set, count
+            yield in_file, out_file, self.read_set, count, self.target_compression
 
 
 def get_filter_reads(read_list_file):
@@ -225,7 +223,7 @@ def get_filter_reads(read_list_file):
     return reads
 
 
-def extract_selected_reads(input_file, output_file, read_set, count):
+def extract_selected_reads(input_file, output_file, read_set, count, target_compression=None):
     """
     Take reads from input file if read_id id is in read_set
     Write to output file, at most count times
@@ -246,8 +244,7 @@ def extract_selected_reads(input_file, output_file, read_set, count):
             if read_id in reads_present:
                 continue
 
-            copy_read_to_multi_fast5(read, output_f5)
-
+            output_f5.add_existing_read(read, target_compression=target_compression)
             reads_present.add(read_id)
 
             if len(found_reads) >= count:
@@ -270,22 +267,6 @@ def read_generator(input_file, read_set):
             yield read_id, read
 
 
-def copy_read_to_multi_fast5(read, output_f5):
-    if isinstance(read, Fast5File):
-        copy_read_from_single(multi_f5=output_f5, single_f5=read)
-    elif isinstance(read, Fast5Read):
-        copy_read_from_multi(multi_f5=output_f5, read=read)
-    else:
-        raise TypeError("Group type {} can't be copied".format(type(read)))
-
-
-def copy_read_from_multi(multi_f5, read):
-    assert isinstance(read, Fast5Read)
-    assert isinstance(multi_f5, MultiFast5File)
-    read_name = "read_" + read.get_read_id()
-    multi_f5.handle.copy(read.handle, read_name)
-
-
 def main():
     parser = ArgumentParser("Tool for extracting reads from a multi_read_fast5_file by read_id")
     parser.add_argument('-i', '--input', required=True,
@@ -304,13 +285,16 @@ def main():
                         help="Search recursively through folders for MultiRead fast5 files")
     parser.add_argument('--ignore_symlinks', action='store_true',
                         help="Ignore symlinks when searching recursively for fast5 files")
+    parser.add_argument('-c', '--compression', required=False, default=None,
+                        choices=list(COMPRESSION_MAP.keys()) + None, help="Target output compression type")
     parser.add_argument('--file_list', required=False,
                         help="File containing names of files to search in")
     args = parser.parse_args()
 
     multifilter = Fast5Filter(input_folder=args.input, output_folder=args.save_path, filename_base=args.filename_base,
                               read_list_file=args.read_id_list, batch_size=args.batch_size, threads=args.threads,
-                              recursive=args.recursive, file_list_file=args.file_list, follow_symlinks=not args.ignore_symlinks)
+                              recursive=args.recursive, file_list_file=args.file_list,
+                              follow_symlinks=not args.ignore_symlinks, target_compression=args.compression)
 
     multifilter.run_batch()
 

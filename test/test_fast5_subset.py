@@ -3,6 +3,7 @@ import numpy
 from glob import glob
 from unittest.mock import patch
 
+from ont_fast5_api.compression_settings import VBZ_V0
 from ont_fast5_api.conversion_tools.fast5_subset import Fast5Filter, read_generator, extract_selected_reads
 from ont_fast5_api.multi_fast5 import MultiFast5File
 from ont_fast5_api.fast5_file import Fast5File
@@ -104,8 +105,7 @@ class TestFast5Subset(TestFast5ApiHelper):
                 temp_file.write(read + '\n')
 
         f = Fast5Filter(input_folder=single_reads, output_folder=self.save_path, read_list_file=temp_file_name,
-                        batch_size=batch_size,
-                        filename_base="batch")
+                        batch_size=batch_size, filename_base="batch", target_compression=VBZ_V0)
 
         args_combos = list(f._args_generator())
         # there should be two tuples of arguments
@@ -116,10 +116,11 @@ class TestFast5Subset(TestFast5ApiHelper):
         assert len(f.available_out_files) == 0
 
         # "exhaust" an input file and put output file back on queue
-        input_file, output_file, reads, count = args_combos[0]
+        input_file, output_file, reads, count, compression = args_combos[0]
         f._update_file_lists(reads={}, in_file=None, out_file=output_file)
         assert len(f.input_f5s) == num_files_queued
         assert len(f.available_out_files) == 1
+        self.assertEqual(compression, VBZ_V0)
 
         # this results in another args tuple generated
         new_args_combos = list(f._args_generator())

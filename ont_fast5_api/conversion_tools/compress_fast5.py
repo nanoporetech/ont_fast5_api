@@ -9,7 +9,7 @@ from ont_fast5_api.compression_settings import COMPRESSION_MAP
 from ont_fast5_api.conversion_tools.conversion_utils import get_fast5_file_list, get_progress_bar
 from ont_fast5_api.fast5_file import Fast5File, EmptyFast5
 from ont_fast5_api.fast5_interface import is_multi_read
-from ont_fast5_api.multi_fast5 import MultiFast5File
+from ont_fast5_api.multi_fast5 import MultiFast5File, copy_attributes
 
 
 def compress_batch(input_folder, output_folder, target_compression, recursive=True, threads=1, follow_symlinks=True,
@@ -54,11 +54,11 @@ def compress_file(input_file, output_file, target_compression):
         if is_multi_read(input_file):
             with MultiFast5File(input_file, 'r') as input_f5, MultiFast5File(output_file, 'a') as output_f5:
                 for read in input_f5.get_reads():
-                    compress_read_from_multi(output_f5, read, target_compression)
+                    output_f5.add_existing_read(read, target_compression)
         else:
             with Fast5File(input_file, 'r') as input_f5, \
                     EmptyFast5(output_file, 'a') as output_f5:
-                compress_read_from_single(output_f5, input_f5, target_compression)
+                compress_single_read(output_f5, input_f5, target_compression)
     except Exception as e:
         # Error raised in Pool.async will be lost so we explicitly print them.
         logging.exception(e)
@@ -66,30 +66,7 @@ def compress_file(input_file, output_file, target_compression):
     return (input_file, output_file)
 
 
-def copy_attributes(input_attrs, output_group):
-    for k, v in input_attrs.items():
-        output_group.attrs[k] = v
-
-def compress_read_from_multi(output_f5, read_to_copy, target_compression):
-    read_id = read_to_copy.get_read_id()
-    read_name = "read_" + read_id
-    if str(target_compression) in read_to_copy.raw_compression_filters:
-        # If we have the right compression then no need for doing anything fancy
-        output_f5.handle.copy(read_to_copy.handle, read_name)
-    else:
-        output_f5.handle.create_group(read_name)
-        output_group = output_f5.handle[read_name]
-        copy_attributes(read_to_copy.handle.attrs, output_group)
-        for subgroup in read_to_copy.handle:
-            if subgroup != read_to_copy.raw_dataset_group_name:
-                output_group.copy(read_to_copy.handle[subgroup], subgroup)
-            else:
-                raw_attrs = read_to_copy.handle[read_to_copy.raw_dataset_group_name].attrs
-                raw_data = read_to_copy.handle[read_to_copy.raw_dataset_name]
-                output_f5.get_read(read_id).add_raw_data(raw_data, raw_attrs, compression=target_compression)
-
-
-def compress_read_from_single(output_f5, read_to_copy, target_compression):
+def compress_single_read(output_f5, read_to_copy, target_compression):
     read_id = read_to_copy.get_read_id()
     raw_dataset_name = read_to_copy.raw_dataset_name
     raw_group_name = read_to_copy.raw_dataset_group_name

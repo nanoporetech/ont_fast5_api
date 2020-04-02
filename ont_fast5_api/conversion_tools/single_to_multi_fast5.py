@@ -4,9 +4,9 @@ import logging
 import os
 
 from ont_fast5_api import __version__
+from ont_fast5_api.compression_settings import COMPRESSION_MAP
 from ont_fast5_api.conversion_tools.conversion_utils import get_fast5_file_list, batcher, get_progress_bar
 from ont_fast5_api.fast5_file import Fast5File, Fast5FileTypeError
-from ont_fast5_api.fast5_interface import check_file_type, SINGLE_READ
 from ont_fast5_api.multi_fast5 import MultiFast5File
 
 logging.basicConfig(level=logging.INFO)
@@ -15,7 +15,7 @@ exc_info = False
 
 
 def batch_convert_single_to_multi(input_path, output_folder, filename_base, batch_size,
-                                  threads, recursive, follow_symlinks):
+                                  threads, recursive, follow_symlinks, target_compression):
     pool = Pool(threads)
     file_list = get_fast5_file_list(input_path, recursive, follow_symlinks)
     pbar = get_progress_bar(int((len(file_list) + batch_size - 1) / batch_size))
@@ -27,14 +27,12 @@ def batch_convert_single_to_multi(input_path, output_folder, filename_base, batc
                 output_table.write("{}\t{}\n".format(filename, output_file))
         pbar.update(pbar.currval + 1)
 
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
-
     results_array = []
+    os.makedirs(output_folder, exist_ok=True)
     for batch_num, batch in enumerate(batcher(file_list, batch_size)):
         output_file = os.path.join(output_folder, "{}_{}.fast5".format(filename_base, batch_num))
         results_array.append(pool.apply_async(create_multi_read_file,
-                                              args=(batch, output_file),
+                                              args=(batch, output_file, target_compression),
                                               callback=update))
 
     pool.close()
@@ -42,54 +40,33 @@ def batch_convert_single_to_multi(input_path, output_folder, filename_base, batc
     pbar.finish()
 
 
-def create_multi_read_file(input_files, output_file):
+def create_multi_read_file(input_files, output_file, target_compression):
     results = []
-    if not os.path.exists(os.path.dirname(output_file)):
-        os.makedirs(os.path.dirname(output_file))
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
     if os.path.exists(output_file):
         logger.info("FileExists - appending new reads to existing file: {}".format(output_file))
     try:
         with MultiFast5File(output_file, 'a') as multi_f5:
             for filename in input_files:
                 try:
-                    result = try_convert_read(filename, multi_f5)
-                    results.append(result)
+                    with Fast5File(filename, 'r') as f5_input:
+                        read = f5_input.get_read(f5_input.read_id)
+                        multi_f5.add_existing_read(read, target_compression=target_compression)
+                    results.append(os.path.basename(filename))
+                except Fast5FileTypeError as e:
+                    logger.error("{}: Cannot input MultiRead files to single_to_multi: '{}'"
+                                 "".format(e, filename), exc_info=exc_info)
+                    raise
                 except Exception as e:
                     logger.error("{}\n\tFailed to add single read file: '{}' to '{}'"
                                  "".format(e, filename, output_file), exc_info=exc_info)
+
+    except Fast5FileTypeError:
+        raise
     except Exception as e:
         logger.error("{}\n\tFailed to write to MultiRead file: {}"
                      "".format(e, output_file), exc_info=exc_info)
     return results, output_file
-
-
-def try_convert_read(input_file, output_handle):
-    with Fast5File(input_file, 'r') as single_f5:
-        file_type = check_file_type(single_f5)
-        if file_type != SINGLE_READ:
-            raise Fast5FileTypeError("Could not convert Single->Multi for file type '{}' with path '{}'"
-                                     "".format(file_type, input_file))
-        add_single_read_to_multi_fast5(output_handle, single_f5)
-        return os.path.basename(input_file)
-
-
-def add_single_read_to_multi_fast5(multi_f5, single_f5):
-    read_id = single_f5.get_read_id()
-    run_id = single_f5.get_run_id()
-    read = multi_f5.create_read(read_id, run_id)
-
-    # Copy Raw data into new file
-    read.handle.copy(single_f5.handle[single_f5.raw_dataset_group_name], "Raw")
-
-    # Copy UniqueGlobalKey data into new file
-    for group in single_f5.handle["UniqueGlobalKey"]:
-        read.handle.copy(single_f5.handle["UniqueGlobalKey/{}".format(group)], group)
-
-    for group in single_f5.handle:
-        if group in ("Raw", "UniqueGlobalKey"):
-            # Skip these as they require special handling
-            continue
-        read.handle.copy(single_f5.handle[group], group)
 
 
 def main():
@@ -108,11 +85,14 @@ def main():
                         help="Search recursively through folders for single_read fast5 files")
     parser.add_argument('--ignore_symlinks', action='store_true',
                         help="Ignore symlinks when searching recursively for fast5 files")
+    parser.add_argument('-c', '--compression', required=False, default=None,
+                        choices=list(COMPRESSION_MAP.keys()) + None, help="Target output compression type")
     parser.add_argument('-v', '--version', action='version', version=__version__)
     args = parser.parse_args()
 
     batch_convert_single_to_multi(args.input_path, args.save_path, args.filename_base, args.batch_size,
-                                  args.threads, args.recursive, follow_symlinks=not args.ignore_symlinks)
+                                  args.threads, args.recursive, follow_symlinks=not args.ignore_symlinks,
+                                  target_compression=args.compression)
 
 
 if __name__ == '__main__':

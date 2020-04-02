@@ -29,3 +29,5 @@ mode_docstring = """Supported file modes:
     w        Create file, truncate if exists
     w- or x  Create file, fail if exists
     a        Read/write if exists, create otherwise"""  # Taken from h5py
+
+HARDLINK_GROUPS = ("context_tags", "tracking_id")
