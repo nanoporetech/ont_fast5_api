@@ -4,7 +4,12 @@ All notable changes and fixes to ont_fast5_api will be documented here
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 This project (aspires to) adhere to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [3.1.0] 2020-02-04
+## [3.1.1] 2020-04-03
+### Fixed
+- Argument list for `fast5_subset` and `single_to_multi` had a syntax error
+
+
+## [3.1.0] 2020-04-02
 ### Added
 - Hardlinking of metadata to prevent duplication and reduce filesize
 - Ability to enable compression when using `fast5_subset` and `single_to_multi`

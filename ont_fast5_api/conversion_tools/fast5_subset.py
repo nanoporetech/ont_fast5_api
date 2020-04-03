@@ -286,7 +286,7 @@ def main():
     parser.add_argument('--ignore_symlinks', action='store_true',
                         help="Ignore symlinks when searching recursively for fast5 files")
     parser.add_argument('-c', '--compression', required=False, default=None,
-                        choices=list(COMPRESSION_MAP.keys()) + None, help="Target output compression type")
+                        choices=list(COMPRESSION_MAP.keys()) + [None], help="Target output compression type")
     parser.add_argument('--file_list', required=False,
                         help="File containing names of files to search in")
     args = parser.parse_args()
