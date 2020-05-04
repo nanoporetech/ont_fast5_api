@@ -291,10 +291,16 @@ def main():
                         help="File containing names of files to search in")
     args = parser.parse_args()
 
-    multifilter = Fast5Filter(input_folder=args.input, output_folder=args.save_path, filename_base=args.filename_base,
-                              read_list_file=args.read_id_list, batch_size=args.batch_size, threads=args.threads,
-                              recursive=args.recursive, file_list_file=args.file_list,
-                              follow_symlinks=not args.ignore_symlinks, target_compression=args.compression)
+    multifilter = Fast5Filter(input_folder=args.input,
+                              output_folder=args.save_path,
+                              filename_base=args.filename_base,
+                              read_list_file=args.read_id_list,
+                              batch_size=args.batch_size,
+                              threads=args.threads,
+                              recursive=args.recursive,
+                              file_list_file=args.file_list,
+                              follow_symlinks=not args.ignore_symlinks,
+                              target_compression=COMPRESSION_MAP[args.compression])
 
     multifilter.run_batch()
 
