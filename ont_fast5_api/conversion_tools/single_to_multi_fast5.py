@@ -1,7 +1,7 @@
-from argparse import ArgumentParser
-from multiprocessing import Pool
 import logging
 import os
+from argparse import ArgumentParser
+from multiprocessing import Pool
 
 from ont_fast5_api import __version__
 from ont_fast5_api.compression_settings import COMPRESSION_MAP
@@ -90,6 +90,9 @@ def main():
     parser.add_argument('-v', '--version', action='version', version=__version__)
     args = parser.parse_args()
 
+    if args.compression is not None:
+        args.compression = COMPRESSION_MAP[args.compression]
+
     batch_convert_single_to_multi(args.input_path,
                                   args.save_path,
                                   args.filename_base,
@@ -97,7 +100,7 @@ def main():
                                   args.threads,
                                   args.recursive,
                                   follow_symlinks=not args.ignore_symlinks,
-                                  target_compression=COMPRESSION_MAP[args.compression])
+                                  target_compression=args.compression)
 
 
 if __name__ == '__main__':

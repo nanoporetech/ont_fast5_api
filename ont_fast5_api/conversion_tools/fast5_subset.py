@@ -1,17 +1,17 @@
 """Filter Fast5 files based on read_id list
 """
-from multiprocessing import Pool
-from math import ceil
-from argparse import ArgumentParser
-from time import sleep
-import logging
 import csv
+import logging
+from argparse import ArgumentParser
+from math import ceil
+from multiprocessing import Pool
 from os import makedirs, path, unlink
+from time import sleep
 
 from ont_fast5_api.compression_settings import COMPRESSION_MAP
-from ont_fast5_api.multi_fast5 import MultiFast5File
 from ont_fast5_api.conversion_tools.conversion_utils import get_fast5_file_list, get_progress_bar
 from ont_fast5_api.fast5_interface import get_fast5_file
+from ont_fast5_api.multi_fast5 import MultiFast5File
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -291,6 +291,9 @@ def main():
                         help="File containing names of files to search in")
     args = parser.parse_args()
 
+    if args.compression is not None:
+        args.compression = COMPRESSION_MAP[args.compression]
+
     multifilter = Fast5Filter(input_folder=args.input,
                               output_folder=args.save_path,
                               filename_base=args.filename_base,
@@ -300,7 +303,7 @@ def main():
                               recursive=args.recursive,
                               file_list_file=args.file_list,
                               follow_symlinks=not args.ignore_symlinks,
-                              target_compression=COMPRESSION_MAP[args.compression])
+                              target_compression=args.compression)
 
     multifilter.run_batch()
 
