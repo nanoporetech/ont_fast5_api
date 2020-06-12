@@ -130,9 +130,10 @@ class MultiFast5File(AbstractFast5):
                 if target_compression is None or str(target_compression) in read_to_add.raw_compression_filters:
                     output_group.copy(read_to_add.handle[read_to_add.raw_dataset_group_name], "Raw")
                 else:
-                    # ToDo implement compression
-                    output_group.copy(read_to_add.handle[read_to_add.raw_dataset_group_name], "Raw")
-
+                    raw_attrs = read_to_add.handle[read_to_add.raw_dataset_group_name].attrs
+                    raw_data = read_to_add.handle[read_to_add.raw_dataset_name]
+                    output_read = self.get_read(read_to_add.read_id)
+                    output_read.add_raw_data(raw_data, raw_attrs, compression=target_compression)
             else:
                 output_group.copy(read_to_add.handle[subgroup], subgroup)
 
