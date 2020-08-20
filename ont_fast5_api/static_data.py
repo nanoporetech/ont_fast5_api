@@ -31,3 +31,4 @@ mode_docstring = """Supported file modes:
     a        Read/write if exists, create otherwise"""  # Taken from h5py
 
 HARDLINK_GROUPS = ("context_tags", "tracking_id")
+OPTIONAL_READ_GROUPS = {'Analyses'}

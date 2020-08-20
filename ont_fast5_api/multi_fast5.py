@@ -3,7 +3,7 @@ import h5py
 from ont_fast5_api import CURRENT_FAST5_VERSION
 from ont_fast5_api.fast5_file import Fast5File, Fast5FileTypeError
 from ont_fast5_api.fast5_read import AbstractFast5, Fast5Read
-from ont_fast5_api.static_data import HARDLINK_GROUPS
+from ont_fast5_api.static_data import HARDLINK_GROUPS, OPTIONAL_READ_GROUPS
 
 
 class MultiFast5File(AbstractFast5):
@@ -73,22 +73,25 @@ class MultiFast5File(AbstractFast5):
                     pass
         return self._run_id_map
 
-    def add_existing_read(self, read_to_add, target_compression=None):
+    def add_existing_read(self, read_to_add, target_compression=None, sanitize=False):
         if isinstance(read_to_add, Fast5File):
-            self._add_read_from_single(read_to_add, target_compression)
+            self._add_read_from_single(read_to_add, target_compression, sanitize=sanitize)
         elif isinstance(read_to_add.parent, MultiFast5File):
-            self._add_read_from_multi(read_to_add, target_compression)
+            self._add_read_from_multi(read_to_add, target_compression, sanitize=sanitize)
         else:
             raise Fast5FileTypeError("Could not add read to output file from input file type '{}' with path '{}'"
                                      "".format(type(read_to_add.parent), read_to_add.parent.filename))
 
-    def _add_read_from_multi(self, read_to_add, target_compression):
+    def _add_read_from_multi(self, read_to_add, target_compression, sanitize=False):
         read_name = "read_" + read_to_add.read_id
         self.handle.create_group(read_name)
         output_group = self.handle[read_name]
         copy_attributes(read_to_add.handle.attrs, output_group)
         for subgroup in read_to_add.handle:
-            if subgroup == read_to_add.raw_dataset_group_name \
+            if sanitize and subgroup in OPTIONAL_READ_GROUPS:
+                # skip optional groups when sanitizing
+                continue
+            elif subgroup == read_to_add.raw_dataset_group_name \
                     and target_compression is not None \
                     and str(target_compression) not in read_to_add.raw_compression_filters:
                 raw_attrs = read_to_add.handle[read_to_add.raw_dataset_group_name].attrs
@@ -109,13 +112,16 @@ class MultiFast5File(AbstractFast5):
             # If we haven't done a special-case copy then we can fall back on the default copy
             output_group.copy(read_to_add.handle[subgroup], subgroup)
 
-    def _add_read_from_single(self, read_to_add, target_compression):
+    def _add_read_from_single(self, read_to_add, target_compression, sanitize=False):
         read_name = "read_" + read_to_add.read_id
         self.handle.create_group(read_name)
         output_group = self.handle[read_name]
         copy_attributes(read_to_add.handle.attrs, output_group)
         for subgroup in read_to_add.handle:
-            if subgroup == "UniqueGlobalKey":
+            if sanitize and subgroup in OPTIONAL_READ_GROUPS:
+                # skip optional groups when sanitizing
+                continue
+            elif subgroup == "UniqueGlobalKey":
                 for unique_group in read_to_add.handle["UniqueGlobalKey"]:
                     if unique_group in HARDLINK_GROUPS and read_to_add.run_id in self.run_id_map:
                         hardlink_source = "read_{}/{}".format(self.run_id_map[read_to_add.run_id], unique_group)
@@ -135,7 +141,8 @@ class MultiFast5File(AbstractFast5):
                     output_read = self.get_read(read_to_add.read_id)
                     output_read.add_raw_data(raw_data, raw_attrs, compression=target_compression)
             else:
-                output_group.copy(read_to_add.handle[subgroup], subgroup)
+                if not sanitize:
+                    output_group.copy(read_to_add.handle[subgroup], subgroup)
 
 
 def copy_attributes(input_attrs, output_group):

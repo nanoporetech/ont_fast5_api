@@ -4,6 +4,13 @@ All notable changes and fixes to ont_fast5_api will be documented here
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 This project (aspires to) adhere to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [3.1.6] 2020-08-20
+### Added
+- `compress_fast5` now has a `--sanitize` option to remove optional groups.
+
+### Fixed
+- Correctly handle the case where h5pl can be imported but doesn't have the prepend() function available.
+
 ## [3.1.5] 2020-06-15
 ### Added
 - Added explicit requirements and checks to prevent running on Python 2.

@@ -6,7 +6,7 @@ def register_plugin():
     try:
         from h5py import h5pl
         h5pl.prepend(bytes(plugin_path, 'UTF-8'))
-    except ImportError:
+    except (ImportError, AttributeError):
         # We don't have the plugin library in h5py<2.10 so we fall back on an environment variable
         import os
         os.environ['HDF5_PLUGIN_PATH'] = plugin_path

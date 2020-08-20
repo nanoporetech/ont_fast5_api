@@ -5,11 +5,12 @@ from unittest.mock import patch
 
 from ont_fast5_api.compression_settings import VBZ, GZIP
 from ont_fast5_api.conversion_tools.check_file_compression import check_read_compression, check_compression
-from ont_fast5_api.conversion_tools.compress_fast5 import compress_single_read, compress_batch
+from ont_fast5_api.conversion_tools.compress_fast5 import compress_file, compress_single_read, compress_batch
 from ont_fast5_api.fast5_file import Fast5File, EmptyFast5
 from ont_fast5_api.fast5_info import ReadInfo
 from ont_fast5_api.fast5_interface import get_fast5_file
 from ont_fast5_api.multi_fast5 import MultiFast5File
+from ont_fast5_api.static_data import OPTIONAL_READ_GROUPS
 from test.helpers import TestFast5ApiHelper, test_data
 
 
@@ -135,3 +136,49 @@ class TestVbzConvert(TestFast5ApiHelper):
         compress_batch(self.save_path, output_folder=None, target_compression=VBZ, in_place=True)
         self.assertCompressed(self.save_path, VBZ, read_count=4, file_count=4)
         self.assertEqual(in_files, set(os.listdir(self.save_path)))
+
+
+class TestSanitise(TestFast5ApiHelper):
+        
+    @staticmethod
+    def list_groups(fname, single_multi='multi'):
+        split_index = {
+            'multi': 1, 'single': 0}
+        all_groups = list()
+        filtered_groups = list()
+        def _add_group(name):
+            all_groups.append(name)
+            try:
+                subgroup = name.split('/')[split_index[single_multi]]
+            except IndexError:
+                # top level
+                filtered_groups.append(name)
+            else:
+                if not subgroup in OPTIONAL_READ_GROUPS:
+                    filtered_groups.append(name)
+        with h5py.File(fname, 'r') as fh:
+            fh.visit(_add_group)
+        return all_groups, filtered_groups
+
+    def _test(self, input_file, output_file, single_or_multi):
+        orig_all_groups, orig_filtered_groups = self.list_groups(input_file, single_or_multi)
+        new_all_groups, new_filtered_groups = self.list_groups(output_file, single_or_multi)
+        
+        self.assertNotEqual(orig_all_groups, orig_filtered_groups)
+        self.assertEqual(orig_filtered_groups, new_filtered_groups)
+        self.assertEqual(new_all_groups, new_filtered_groups)
+
+    def test_multi_to_multi(self):
+        input_file = os.path.join(test_data, "multi_read_analyses", "batch_0.fast5")
+        output_file = self.generate_temp_filename()
+        compress_file(input_file, output_file, VBZ, sanitize=True)
+        self._test(input_file, output_file, 'multi')
+
+    def test_single_to_multi(self):
+        input_file = os.path.join(test_data, "single_read_analyses", "read.fast5")
+        output_file = self.generate_temp_filename()
+        with Fast5File(input_file, 'r') as input_f5, \
+                EmptyFast5(output_file, 'a') as output_f5:
+            compress_single_read(output_f5, input_f5, VBZ, sanitize=True)
+        self._test(input_file, output_file, 'single')
+
