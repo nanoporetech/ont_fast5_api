@@ -15,7 +15,9 @@ class TestMultiFast5(TestFast5ApiHelper):
 
     def create_multi_file(self, read_ids):
         filename = self.generate_temp_filename()
-        with MultiFast5File(filename, 'w') as multi_f5:
+        # driver=None is the default, but adding this in here makes sure we
+        # preserve the constructor argument.
+        with MultiFast5File(filename, 'w', driver=None) as multi_f5:
             for read_id in read_ids:
                 multi_f5.create_empty_read(read_id, run_id)
         return filename

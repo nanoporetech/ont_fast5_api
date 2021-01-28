@@ -8,9 +8,9 @@ SINGLE_READ = "single-read"
 BULK_FAST5 = "bulk"
 
 
-def get_fast5_file(filepath, mode='r'):
+def get_fast5_file(filepath, mode='r', driver=None):
     if is_multi_read(filepath):
-        return MultiFast5File(filepath, mode)
+        return MultiFast5File(filepath, mode, driver=driver)
     else:
         return Fast5File(filepath, mode)
 

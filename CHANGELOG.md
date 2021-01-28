@@ -4,6 +4,16 @@ All notable changes and fixes to ont_fast5_api will be documented here
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 This project (aspires to) adhere to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] 2021-01-28
+
+### Changed
+- Dropped support for older h5py/numpy versions, min now h5py>=2.8, numpy>=1.16
+- fast5_subset now displays errors (but continues processing) when it encounters input fast5 files it can't read.
+
+### Added
+- Add support for explicitly specifying file drivers when loading
+  multi-read fast5 files.
+
 ## [3.1.6] 2020-08-20
 ### Added
 - `compress_fast5` now has a `--sanitize` option to remove optional groups.

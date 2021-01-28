@@ -7,10 +7,12 @@ from ont_fast5_api.static_data import HARDLINK_GROUPS, OPTIONAL_READ_GROUPS
 
 
 class MultiFast5File(AbstractFast5):
-    def __init__(self, filename, mode='r'):
+    def __init__(self, filename, mode='r', driver=None):
+        # See https://docs.h5py.org/en/stable/high/file.html#file-drivers for
+        # information on why you might want to use a specific driver.
         self.filename = filename
         self.mode = mode
-        self.handle = h5py.File(self.filename, self.mode)
+        self.handle = h5py.File(self.filename, self.mode, driver=driver)
         self._run_id_map = None
         if mode != 'r' and 'file_version' not in self.handle.attrs:
             try:

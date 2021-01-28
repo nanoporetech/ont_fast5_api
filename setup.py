@@ -22,8 +22,10 @@ with open('README.rst') as readme:
 
 installation_requirements = []
 if 'IGNORE_INCLUDES' not in os.environ:
-    installation_requirements = ['h5py>=2.6', 'numpy>=1.11',
-                                 'packaging', 'progressbar33>=2.3.1']
+    installation_requirements = ['h5py>=2.8',
+                                 'numpy>=1.16',
+                                 'packaging',
+                                 'progressbar33>=2.3.1']
 
 setup(name=__pkg_name__.replace("_", "-"),
       author='Oxford Nanopore Technologies, Limited',

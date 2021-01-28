@@ -136,7 +136,8 @@ class Fast5Filter:
         :return:
         """
         for args_tuple in self._args_generator():
-            self.pool.apply_async(func=extract_selected_reads, args=args_tuple, callback=self._callback)
+            self.pool.apply_async(func=extract_selected_reads, args=args_tuple,
+                                  callback=self._callback, error_callback=self._error_callback)
 
             self.tasks.append(0)
             if len(self.tasks) > self.num_workers:
@@ -149,6 +150,12 @@ class Fast5Filter:
         :return:
         """
         self._update_file_lists(*result)
+        self._launch_async_tasks()
+        self.tasks.pop()
+
+    def _error_callback(self, result):
+        self.logger.error(result.original_exception)
+        self._update_file_lists(set(), result.output_file, None)
         self._launch_async_tasks()
         self.tasks.pop()
 
@@ -194,6 +201,12 @@ class Fast5Filter:
             yield in_file, out_file, self.read_set, count, self.target_compression
 
 
+class ExtractionException(Exception):
+    def __init__(self, original_exception, output_file):
+        self.original_exception = original_exception
+        self.output_file = output_file
+
+
 def get_filter_reads(read_list_file):
     """
     Opens a text file and returns set of read_ids
@@ -235,20 +248,25 @@ def extract_selected_reads(input_file, output_file, read_set, count, target_comp
     :param count:
     :return:
     """
-    found_reads = set()
-    with MultiFast5File(str(output_file), 'a') as output_f5:
-        reads_present = set(output_f5.get_read_ids())
-        for read_id, read in read_generator(input_file, read_set):
-            found_reads.add(read_id)
+    try:
+        found_reads = set()
+        with MultiFast5File(str(output_file), 'a') as output_f5:
+            reads_present = set(output_f5.get_read_ids())
+            for read_id, read in read_generator(input_file, read_set):
+                found_reads.add(read_id)
 
-            if read_id in reads_present:
-                continue
+                if read_id in reads_present:
+                    continue
 
-            output_f5.add_existing_read(read, target_compression=target_compression)
-            reads_present.add(read_id)
+                output_f5.add_existing_read(read, target_compression=target_compression)
+                reads_present.add(read_id)
 
-            if len(found_reads) >= count:
-                return found_reads, output_file, input_file
+                if len(found_reads) >= count:
+                    return found_reads, output_file, input_file
+    except Exception as e:
+        exception = type(e)("Error processing file {}: {}".format(input_file,
+                                                                  e.args))
+        raise ExtractionException(exception, output_file)
 
     return found_reads, output_file, None
 
