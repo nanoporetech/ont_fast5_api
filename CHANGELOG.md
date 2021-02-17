@@ -4,6 +4,11 @@ All notable changes and fixes to ont_fast5_api will be documented here
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 This project (aspires to) adhere to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] 2021-02-17
+
+### Added
+- Added `yield_fast5_reads` to conversion_tools.
+
 ## [3.2.0] 2021-01-28
 
 ### Changed

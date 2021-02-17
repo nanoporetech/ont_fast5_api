@@ -1,7 +1,8 @@
 import os
+
 from glob import glob
 from progressbar import RotatingMarker, ProgressBar, SimpleProgress, Bar, Percentage, ETA
-
+from ont_fast5_api.fast5_interface import get_fast5_file
 
 def batcher(iterable, n=1):
     l = len(iterable)
@@ -10,6 +11,15 @@ def batcher(iterable, n=1):
 
 
 def yield_fast5_files(input_path, recursive, follow_symlinks=True):
+    """
+    Yield fast5 file paths within a given directory.
+    Optionally search recursively and follow symbolic links
+
+    :param input_dir: Path
+    :param recursive: bool
+    :param follow_symlinks: bool
+    :return:
+    """
     if os.path.isfile(input_path):
         yield input_path
         return
@@ -24,6 +34,33 @@ def yield_fast5_files(input_path, recursive, follow_symlinks=True):
             yield filename
     return
 
+def yield_fast5_reads(input_path, recursive, follow_symlinks=True, read_ids=None):
+    """
+    Iterate over reads in fast5 files and yield read_ids and fast5 read objects.
+    If read_id_set is defined, skip reads which are not in this set/list. An empty set/list returns all.
+
+    :param input_dir: Path
+    :param recursive: bool
+    :param follow_symlinks: bool
+    :param read_ids: set or list
+    :raise TypeError: read_id_set must be of type set or list'
+    :return: yielded tuple (read_id, fast5_read_object)
+    """
+    if not isinstance(read_ids, (list, set)) and read_ids is not None:
+        raise TypeError('read_ids must be of type set or list or none')
+
+    if read_ids and isinstance(read_ids, list):
+        read_ids = set(read_ids)
+
+    for fast5_path in yield_fast5_files(input_path=input_path, recursive=recursive, follow_symlinks=follow_symlinks):
+        fast5_file = get_fast5_file(fast5_path)
+        if read_ids:
+            selected_reads = read_ids.intersection(fast5_file.get_read_ids())
+        else:
+            selected_reads = fast5_file.get_read_ids()
+
+        for read_id in selected_reads:
+            yield read_id, fast5_file.get_read(read_id)
 
 def get_fast5_file_list(input_path, recursive, follow_symlinks=True):
     # NB this method is provided for compatibility with use cases where
