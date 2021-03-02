@@ -20,6 +20,7 @@ LEGACY_COMPONENT_NAMES = {'Alignment': 'alignment',
                           'Sam_Segmentor': 'sam_segmentor',
                           'arma': 'arma',
                           'Basic_component': 'basic_component',
+                          'RawGenomeCorrected':'raw_genome_corrected' # default name from tombo resquiggle command
                           }
 
 supported_modes = ('r', 'r+', 'w', 'w-', 'x', 'a')
