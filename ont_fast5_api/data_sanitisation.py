@@ -1,15 +1,5 @@
 import h5py
 import numpy as np
-from pkg_resources import parse_version
-
-
-def check_version_compatibility():
-    if parse_version(h5py.__version__) < parse_version("2.7") \
-            and parse_version(np.__version__) >= parse_version("1.13"):
-        raise EnvironmentError("Incompatible h5py=={} and numpy=={} versions detected. \n"
-                               "Array reading/decoding may not proceed as expected. \n"
-                               "Please upgrade to the latest compatible verions"
-                               "".format(h5py.__version__, np.__version__))
 
 
 def _clean(value):
@@ -35,7 +25,6 @@ def _clean(value):
 
 def _sanitize_data_for_writing(data):
     # To make the interface more user friendly we encode python strings as  byte-strings when writing datasets
-    check_version_compatibility()
     if isinstance(data, str):
         # Plain python-strings can be encoded trivially
         return data.encode()
@@ -51,24 +40,13 @@ def _sanitize_data_for_writing(data):
                 str_len = field_dtype.itemsize // field_dtype.alignment
                 field_dtype = np.dtype("|S{}".format(str_len))
             encoded_dtypes.append((field_name, field_dtype))
-        try:
-            return data.astype(encoded_dtypes)
-        except (ValueError, UnicodeEncodeError):
-            if parse_version(h5py.__version__) < parse_version("2.7"):
-                raise UnicodeError("Cannot encode array with types: {}.\n"
-                                   "There are known bugs in h5py<2.7 which yield non-deteministic results when decoding "
-                                   "arrays with empty strings and additional bugs with compatibility between "
-                                   "h5py<2.7 and numpy>=1.13 when decoding arrays with  mixed/padded data types.\n"
-                                   "Please try upgrading to the latest h5py and numpy versions"
-                                   "".format(encoded_dtypes))
-            else:
-                raise
+        return data.astype(encoded_dtypes)
+
     return data
 
 
 def _sanitize_data_for_reading(data):
     # To make the interface more user friendly we decode byte-strings into unicode strings when reading datasets
-    check_version_compatibility()
     if isinstance(data, h5py.Dataset):
         data = data[()]
 
@@ -86,16 +64,6 @@ def _sanitize_data_for_reading(data):
             if field_dtype.kind == 'S':
                 field_dtype = np.dtype("<U{}".format(field_dtype.itemsize))
             decoded_dtypes.append((field_name, field_dtype))
-        try:
-            return data.astype(decoded_dtypes)
-        except (UnicodeDecodeError, SystemError):
-            # On h5py==2.6 we can't decode padded string-arrays properly - we should advise users to upgrade
-            if parse_version(h5py.__version__) < parse_version("2.7"):
-                raise UnicodeError("Cannot encode array with types: {}.\n"
-                                   "There are known bugs in h5py<2.7 which yield non-deteministic results when decoding "
-                                   "arrays with empty strings and additional bugs with compatibility between "
-                                   "h5py<2.7 and numpy>=1.13 when decoding arrays with  mixed/padded data types.\n"
-                                   "Please try upgrading to the latest h5py and numpy versions".format(decoded_dtypes))
-            else:
-                raise
+        return data.astype(decoded_dtypes)
+
     return data

@@ -1,26 +1,27 @@
 import os
 import numpy
-from glob import glob
 from unittest.mock import patch
+from pathlib import Path
 
 from ont_fast5_api.compression_settings import VBZ_V0
-from ont_fast5_api.conversion_tools.fast5_subset import Fast5Filter, read_generator, extract_selected_reads
+from ont_fast5_api.conversion_tools.fast5_subset import Fast5Filter
+from ont_fast5_api.conversion_tools.conversion_utils import Fast5FilterWorker, extract_selected_reads, read_generator
 from ont_fast5_api.multi_fast5 import MultiFast5File
 from ont_fast5_api.fast5_file import Fast5File
 from test.helpers import TestFast5ApiHelper, test_data
 
 
 class TestFast5Subset(TestFast5ApiHelper):
-    input_multif5_path = os.path.join(test_data, "multi_read", "batch_0.fast5")
+    input_multif5_path = Path(test_data) / "multi_read" / "batch_0.fast5"
     read_set = {"fe85b517-62ee-4a33-8767-41cab5d5ab39", "fe9374ee-b86a-4ca4-81dc-ac06e3297728"}
 
     def test_read_generator(self):
         count = 0
         for read_id, read in read_generator(input_file=self.input_multif5_path, read_set=self.read_set):
-            assert read_id in self.read_set
+            self.assertIn(read_id, self.read_set)
             count += 1
 
-        assert len(self.read_set) == count
+        self.assertEqual(len(self.read_set), count)
 
     def _create_read_list_file(self, read_ids):
         output_path = os.path.join(self.save_path, 'read_list.txt')
@@ -75,53 +76,56 @@ class TestFast5Subset(TestFast5ApiHelper):
                                                                           output_file=temp_file_name,
                                                                           count=count, read_set=self.read_set)
             if count < len(self.read_set):
-                assert found_reads.issubset(self.read_set)
-                assert input_file == self.input_multif5_path
+                self.assertTrue(found_reads.issubset(self.read_set))
+                self.assertEqual(input_file, self.input_multif5_path)
             elif count == len(self.read_set):
-                assert found_reads == self.read_set
-                assert input_file == self.input_multif5_path
+                self.assertEqual(found_reads, self.read_set)
+                self.assertEqual(input_file, self.input_multif5_path)
             elif count >= len(self.read_set):
-                assert found_reads == self.read_set
-                assert input_file is None
+                self.assertEqual(found_reads, self.read_set)
+                self.assertIsNone(input_file)
 
-            assert output_file == temp_file_name
+            self.assertEqual(output_file, temp_file_name)
             # verify that resulting output file is a legal MultiFast5 with desired reads in it
             with MultiFast5File(output_file) as multi_file:
                 readlist = multi_file.get_read_ids()
                 self.assertTrue(set(readlist).issubset(self.read_set))
 
-    @patch('ont_fast5_api.conversion_tools.fast5_subset.get_progress_bar')
-    def test_selector_args_generator(self, mock_pbar):
+    @patch('ont_fast5_api.conversion_tools.conversion_utils.ProgressBar')
+    @patch('ont_fast5_api.conversion_tools.fast5_subset.logging')
+    def test_selector_args_generator(self, mock_pbar, mock_logger):
         single_reads = os.path.join(test_data, "single_reads")
-        assert os.path.isdir(single_reads), single_reads
+        self.assertTrue(os.path.isdir(single_reads), msg=single_reads)
 
-        input_f5s = glob(os.path.join(single_reads, '*.fast5'))  # list(single_reads.glob('*'))
+        input_f5s = list(Path(single_reads).glob('*.fast5'))
         batch_size = 1
 
-        # create mock read id list file
-        temp_file_name = self.generate_temp_filename()
-        with open(temp_file_name, 'w') as temp_file:
-            for read in self.read_set:
-                temp_file.write(read + '\n')
-
-        f = Fast5Filter(input_folder=single_reads, output_folder=self.save_path, read_list_file=temp_file_name,
-                        batch_size=batch_size, filename_base="batch", target_compression=VBZ_V0)
+        f = Fast5FilterWorker(
+            input_file_list=input_f5s,
+            output_dir=Path(self.save_path),
+            read_set=self.read_set,
+            batch_size=batch_size,
+            filename_base="batch",
+            target_compression=VBZ_V0,
+            progressbar=mock_pbar,
+            logger=mock_logger
+        )
 
         args_combos = list(f._args_generator())
         # there should be two tuples of arguments
-        assert len(args_combos) == len(self.read_set) / batch_size
+        self.assertEqual(len(args_combos), len(self.read_set) / batch_size)
 
-        num_files_queued = len(f.input_f5s)
-        assert num_files_queued == (len(input_f5s) - len(args_combos)), f.input_f5s
-        assert len(f.available_out_files) == 0
+        num_files_queued = len(f.input_f5s) # should be 0
+        self.assertEqual(num_files_queued, (len(input_f5s) - len(args_combos)), msg=f.input_f5s)
+        self.assertEqual(len(f.available_out_files), 0)
 
         # "exhaust" an input file and put output file back on queue
         input_file, output_file, reads, count, compression = args_combos[0]
         f._update_file_lists(reads={}, in_file=None, out_file=output_file)
-        assert len(f.input_f5s) == num_files_queued
-        assert len(f.available_out_files) == 1
+        self.assertEqual(len(f.input_f5s), num_files_queued)
+        self.assertEqual(len(f.available_out_files), 1)
         self.assertEqual(compression, VBZ_V0)
 
         # this results in another args tuple generated
         new_args_combos = list(f._args_generator())
-        assert len(new_args_combos) == 1, len(new_args_combos)
+        self.assertEqual(len(new_args_combos), 1, msg=len(new_args_combos))

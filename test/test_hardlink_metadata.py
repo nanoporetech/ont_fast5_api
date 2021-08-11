@@ -2,7 +2,7 @@ import os
 
 from ont_fast5_api.compression_settings import VBZ
 from ont_fast5_api.conversion_tools.compress_fast5 import compress_file
-from ont_fast5_api.conversion_tools.fast5_subset import extract_selected_reads
+from ont_fast5_api.conversion_tools.conversion_utils import extract_selected_reads
 from ont_fast5_api.fast5_interface import get_fast5_file
 from ont_fast5_api.multi_fast5 import MultiFast5File
 from ont_fast5_api.static_data import HARDLINK_GROUPS

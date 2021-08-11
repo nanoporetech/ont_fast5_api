@@ -1,4 +1,4 @@
-__version__ = '3.3.0'
+__version__ = '4.0.0'
 __version_info__ = tuple([int(num) for num in __version__.split('.')])
 CURRENT_FAST5_VERSION = 2.0
 

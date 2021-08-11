@@ -76,12 +76,15 @@ This script converts folders containing ``single_read_fast5`` files into
 ``multi_read_fast5_files``::
 
     single_to_multi_fast5
-        -i, --input_path <(path) folder containing single_read_fast5 files>
-        -s, --save_path <(path) to folder where multi_read fast5 files will be output>
-        [optional] -t, --threads <(int) number of CPU threads to use; default=1>
-        [optional] -f, --filename_base <(string) name for new multi_read file; default="batch" (see note-1)>
-        [optional] -n, --batch_size <(int) number of single_reads to include in each multi_read file; default=4000>
-        [optional] --recursive <if included, recursively search sub-directories for single_read files>
+    [required]
+        -i, --input_path    INPUT_PATH      <(path) folder containing single_read_fast5 files>
+        -s, --save_path     SAVE_PATH       <(path) to folder where multi_read fast5 files will be output>
+
+    [optional]
+        -t, --threads       THREADS         <(int) number of CPU threads to use; default=1>
+        -f, --filename_base FILENAME_BASE   <(string) name for new multi_read file; default="batch" (see note-1)>
+        -n, --batch_size    BATCH_SIZE      <(int) number of single_reads to include in each multi_read file; default=4000>
+        --recursive                         <if included, recursively search sub-directories for single_read files>
 
 *note-1:* newly created ``multi_read`` files require a name. This is the
 ``filename_base`` with the batch count and ``.fast5`` appended to it; e.g.
@@ -103,10 +106,13 @@ This script converts folders containing ``multi_read_fast5`` files into
 ``single_read_fast5`` files::
 
     multi_to_single_fast5
-        -i, --input_path <(path) folder containing multi_read_fast5 files>
-        -s, --save_path <(path) to folder where single_read fast5 files will be output>
-        [optional] -t, --threads <(int) number of CPU threads to use; default=1>
-        [optional] --recursive <if included, recursively search sub-directories for multi_read files>
+    [required]
+        -i, --input_path    INPUT_PATH  <(path) folder containing multi_read_fast5 files>
+        -s, --save_path     SAVE_PATH   <(path) to folder where single_read fast5 files will be output
+
+    [optional]
+        -t, --threads       THREADS     <(int) number of CPU threads to use; default=1>
+        --recursive                     <if included, recursively search sub-directories for multi_read files>
 
 **example usage**::
 
@@ -122,12 +128,15 @@ fast5_subset
 This script extracts reads from ``multi_read_fast5_file(s)`` based on a list of read_ids::
 
     fast5_subset
-        -i, --input <(path) to folder containing multi_read_fast5 files or an individual multi_read_fast5 file> 
-        -s, --save_path <(path) to folder where multi_read fast5 files will be output>
-        -l,--read_id_list <(file) either sequencing_summary.txt file or a file containing a list of read_ids>
-        [optional] -f, --filename_base <(string) name for new multi_read file; default="batch" (see note-1)>
-        [optional] -n, --batch_size <(int) number of single_reads to include in each multi_read file; default=4000>
-        [optional] --recursive <if included, recursively search sub-directories for single_read files>
+    [required]
+        -i, --input         INPUT_PATH      <(path) to folder containing multi_read_fast5 files or an individual multi_read_fast5 file>
+        -s, --save_path     SAVE_PATH       <(path) to folder where multi_read fast5 files will be output>
+        -l,--read_id_list   SUMMARY_PATH    <(file) either sequencing_summary.txt file or a file containing a list of read_ids>
+
+    [optional]
+        -f, --filename_base FILENAME_BASE   <(string) name for new multi_read file; default="batch" (see note-1)>
+        -n, --batch_size    BATCH_SIZE      <(int) number of single_reads to include in each multi_read file; default=4000>
+        --recursive                         <if included, recursively search sub-directories for single_read files>
 
 **example usage**::
 
@@ -141,17 +150,53 @@ The output will be ``multi_read`` .fast5 files each containing 100 reads,
 in the folder: ``/data/multi_reads`` with the names: ``batch_output_0.fast5``,
 ``batch_output_1.fast5`` etc.
 
+demux_fast5
+-------------------------------------------------------------------------------
+This script for ``demultiplexing`` reads from ``multi_read_fast5_file(s)``.
+
+Extracts reads into multiple directories based on column value in a summary file::
+
+    demux_fast5.py
+    [required]
+      -i, --input          INPUT_PATH    <Path to Fast5 file or directory of Fast5 files>
+      -s, --save_path      SAVE_PATH     <Directory to output MultiRead subsets>
+      -l, --summary_file   SUMMARY_PATH  <TSV file containing read_id and demultiplex columns>
+
+    [optional]
+      --read_id_column     COLUMN_NAME   <Name of read_id column in summary file (default 'read_id')>
+      --demultiplex_column COLUMN_NAME   <Name of column for demultiplexing in summary file (default 'barcoding_arrangement')>
+      -f, --filename_base  FILENAME_BASE <Root of output filename, default='batch' -> 'batch_0.fast5'>
+      -n, --batch_size     BATCH_SIZE    <Number of reads per multi-read file, default 4000>
+      -t, --threads        THREADS       <Maximum number of processes to use>
+      -r, --recursive                    <Flag to search recursively through input directory for MultiRead fast5 files>
+      --ignore_symlinks                  <Ignore symlinks when searching recursively for fast5 files>
+      -c --compression     COMPRESSION   <Target output compression type (vbz,vbz_legacy_v0,gzip,None)>
+
+Intended use is for multiplexed experiments, for reads with different barcodes or from different genomes.
+
+**example usage**::
+
+    demux_fast5 --input /data/multi_reads --save_path /data/demultiplexed_reads --summary_file barcoding_summary.txt
+
+Where ``/data/multi_reads`` and/or its subfolders contain fast5 files from multiplexed experiment,
+``barcoding_summary.txt`` is the output of guppy_barcoder. ``/data/demultiplexed_reads`` will contain a directory per
+barcode, containing ``multi_read`` .fast5 files with names: ``/data/demultiplexed_reads/barcode01/batch_0.fast5``,
+``/data/demultiplexed_reads/barcode02/batch_0.fast5`` etc. Directories are named by values in demultiplex column.
+
 compress_fast5
 -------------------------------------------------------------------------------
 This script copies and converts raw data between `vbz` and `gzip` compression formats::
 
     compress_fast5
-        -i, --input_path <(path) folder containing multi_read_fast5 files>
-        -s, --save_path <(path) to folder where single_read fast5 files will be output>
-        -c, --compression <(str) [vbz, gzip] target compression format>
-        [optional] -t, --threads <(int) number of CPU threads to use; default=1>
-        [optional] --recursive <if included, recursively search sub-directories for fast5 files>
-        [optional] --sanitize, remove optional groups (such as basecalling and modified base information)
+    [required]
+        -i, --input_path    INPUT_PATH  <(path) folder containing multi_read_fast5 files>
+        -s, --save_path     SAVE_PATH   <(path) to folder where single_read fast5 files will be output>
+        -c, --compression   COMPRESSION <(str) [vbz, gzip] target compression format>
+
+    [optional]
+        -t, --threads       THREADS     <(int) number of CPU threads to use; default=1>
+        --recursive                     <if included, recursively search sub-directories for fast5 files>
+        --sanitize                      <flag to remove optional groups (such as basecalling and modified base information)>
 
 **example usage**::
 
@@ -202,3 +247,7 @@ fastq-basecalls and any other additional analyses
 
 **Multi read fast5** - A fast5 file containing data pertaining to a multiple
 Oxford Nanopore reads.
+
+**Demultiplexing** - A process of separating reads of an experiment where multiple samples were mixed together
+(multiplexed), into corresponding samples. Demultiplexing is based on markers that identify
+sample origin, e.g. unique barcodes or alignment to a reference genome.

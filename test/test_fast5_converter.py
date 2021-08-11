@@ -7,7 +7,7 @@ import numpy
 from ont_fast5_api.conversion_tools.multi_to_single_fast5 import convert_multi_to_single, try_multi_to_single_conversion
 from ont_fast5_api.conversion_tools.single_to_multi_fast5 import batch_convert_single_to_multi, get_fast5_file_list, \
     create_multi_read_file
-from ont_fast5_api.conversion_tools.fast5_subset import MultiFast5File
+from ont_fast5_api.multi_fast5 import MultiFast5File
 from ont_fast5_api.fast5_file import Fast5FileTypeError, Fast5File
 from test.helpers import TestFast5ApiHelper, test_data, disable_logging
 
