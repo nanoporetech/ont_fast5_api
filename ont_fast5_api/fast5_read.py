@@ -1,4 +1,5 @@
 from configparser import ConfigParser
+from typing import Dict, Any, Union
 
 import h5py
 import numpy as np
@@ -7,7 +8,6 @@ from collections import deque
 
 from ont_fast5_api.compression_settings import VBZ, raise_missing_vbz_error_read, raise_missing_vbz_error_write
 from ont_fast5_api.data_sanitisation import _sanitize_data_for_reading, _sanitize_data_for_writing, _clean
-from ont_fast5_api.helpers import copy_attributes
 from ont_fast5_api.static_data import LEGACY_COMPONENT_NAMES
 
 
@@ -569,3 +569,16 @@ class Fast5Read(AbstractFast5):
             attr = self.handle[path].attrs.items()
             data[folder] = {key: _clean(value) for key, value in attr}
         return data
+
+
+def copy_attributes(input_attrs: Union[h5py.AttributeManager, Dict[Any, Any]], output_group: h5py.Group):
+    """ Copy the members of a given h5py.AttributeManager into an output h5py.Group"""
+    if isinstance(input_attrs, h5py.AttributeManager):
+        # Ensure h5py data types (e.g. enumerations) are retained during copy
+        for name, data in input_attrs.items():
+            dtype = input_attrs.get_id(name).dtype
+            output_group.attrs.create(name=name, data=data, dtype=dtype)
+    else:
+        # Simple dictionary copy into the output group attributes
+        for name, data in input_attrs.items():
+            output_group.attrs[name] = data

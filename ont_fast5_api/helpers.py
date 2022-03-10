@@ -1,5 +1,3 @@
-from typing import Union, Dict, Any
-
 import h5py
 import warnings
 from ont_fast5_api import fast5_file as f5f
@@ -46,16 +44,3 @@ def compare_hdf_files(file1, file2):
     with h5py.File(file2, 'r') as fh2:
         fh2.visititems(scanner2)
     return data1.contents == data2.contents
-
-
-def copy_attributes(input_attrs: Union[h5py.AttributeManager, Dict[Any, Any]], output_group: h5py.Group):
-    """ Copy the members of a given h5py.AttributeManager into an output h5py.Group"""
-    if isinstance(input_attrs, h5py.AttributeManager):
-        # Ensure h5py data types (e.g. enumerations) are retained during copy
-        for name, data in input_attrs.items():
-            dtype = input_attrs.get_id(name).dtype
-            output_group.attrs.create(name=name, data=data, dtype=dtype)
-    else:
-        # Simple dictionary copy into the output group attributes
-        for name, data in input_attrs.items():
-            output_group.attrs[name] = data

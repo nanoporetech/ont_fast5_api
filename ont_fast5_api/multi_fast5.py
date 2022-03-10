@@ -2,8 +2,7 @@ import h5py
 
 from ont_fast5_api import CURRENT_FAST5_VERSION
 from ont_fast5_api.fast5_file import Fast5File, Fast5FileTypeError
-from ont_fast5_api.fast5_read import AbstractFast5, Fast5Read
-from ont_fast5_api.helpers import copy_attributes
+from ont_fast5_api.fast5_read import AbstractFast5, Fast5Read, copy_attributes
 from ont_fast5_api.static_data import HARDLINK_GROUPS, OPTIONAL_READ_GROUPS
 
 

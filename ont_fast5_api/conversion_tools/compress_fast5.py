@@ -8,8 +8,9 @@ from ont_fast5_api import __version__
 from ont_fast5_api.compression_settings import COMPRESSION_MAP
 from ont_fast5_api.conversion_tools.conversion_utils import get_fast5_file_list, get_progress_bar
 from ont_fast5_api.fast5_file import Fast5File, EmptyFast5
+from ont_fast5_api.fast5_read import copy_attributes
 from ont_fast5_api.fast5_interface import is_multi_read
-from ont_fast5_api.multi_fast5 import MultiFast5File, copy_attributes
+from ont_fast5_api.multi_fast5 import MultiFast5File
 from ont_fast5_api.static_data import OPTIONAL_READ_GROUPS
 
 
