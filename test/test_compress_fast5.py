@@ -6,6 +6,7 @@ from unittest.mock import patch
 from ont_fast5_api.compression_settings import VBZ, GZIP
 from ont_fast5_api.conversion_tools.check_file_compression import check_read_compression, check_compression
 from ont_fast5_api.conversion_tools.compress_fast5 import compress_file, compress_single_read, compress_batch
+from ont_fast5_api.conversion_tools.conversion_utils import get_fast5_file_list
 from ont_fast5_api.fast5_file import Fast5File, EmptyFast5
 from ont_fast5_api.fast5_info import ReadInfo
 from ont_fast5_api.fast5_interface import get_fast5_file
@@ -84,6 +85,30 @@ class TestVbzConvert(TestFast5ApiHelper):
         self.assertEqual(read_count, len(read_ids))
         self.assertEqual(file_count, len(files))
 
+    def assert_end_reason_attr_is_enum(self, _: str, obj: h5py.HLObject):
+        """
+        Assert that the end_reason attribute is an h5 enumeration
+
+        Parameters matches signature for h5py.Group.visititems(name, object) used in the
+        recursive search. name is unused.
+        """
+        if "end_reason" in obj.attrs:
+            # Set state variable that end_reason attribute is seen in the given file
+            # This is used to assert that this test doesn't pass due to an absence of a
+            # negative result
+            self.end_reason_seen = True
+
+            metadata = obj.attrs.get_id("end_reason").dtype.metadata
+            self.assertIsNotNone(
+                metadata,
+                msg="end_reason attribute dtype.metadata is None.  "
+                    "This indicates that the enumeration metadata is lost"
+            )
+            self.assertTrue(
+                "enum" in metadata,
+                msg="end_reason attribute dtype.metadata does not contain enum"
+            )
+
     def test_add_read_from_multi(self):
         target_compression = VBZ
         with get_fast5_file(os.path.join(test_data, "multi_read", "batch_0.fast5"), "r") as input_f5, \
@@ -124,6 +149,57 @@ class TestVbzConvert(TestFast5ApiHelper):
         input_folder = os.path.join(test_data, 'single_reads')
         compress_batch(input_folder=input_folder, output_folder=self.save_path, target_compression=VBZ)
         self.assertCompressed(self.save_path, VBZ, read_count=4, file_count=4)
+
+    def assert_all_files_retain_end_reason_enumeration_metadata(self):
+        """
+        Assertion that all output files have not lost the end_reason enumeration metadata
+        """
+
+        for f5_file in get_fast5_file_list(self.save_path, recursive=True):
+
+            # Require that the end_reason attribute is seen in the file under test.
+            # This is used to assert that this test doesn't pass due to an absence of a
+            # negative result
+            self.end_reason_seen = False
+
+            with h5py.File(f5_file, "r") as fh:
+                # Check the top level item
+                self.assert_end_reason_attr_is_enum("", fh)
+
+                # Recursively search all items in the file
+                fh.visititems(self.assert_end_reason_attr_is_enum)
+
+            self.assertTrue(
+                self.end_reason_seen,
+                msg="No end_reason attributes seen in the fast5 file. Something went wrong."
+            )
+
+    @patch('ont_fast5_api.conversion_tools.compress_fast5.get_progress_bar')
+    def test_conversion_script_multi_retains_end_reason_enumeration(self, mock_pbar):
+        """
+        Test that given a collection of multi read fast5 files that undergo compression
+        that the end_reason attribute metadata which indicates that it is an enumeration,
+        is not lost
+        """
+        input_folder = os.path.join(test_data, 'multi_read')
+        compress_batch(input_folder=input_folder, output_folder=self.save_path,
+                       target_compression=VBZ)
+
+        self.assert_all_files_retain_end_reason_enumeration_metadata()
+
+    @patch('ont_fast5_api.conversion_tools.compress_fast5.get_progress_bar')
+    def test_conversion_script_single_retains_end_reason_enumeration(self, mock_pbar):
+        """
+        Test that given a collection of single read fast5 files that undergo compression
+        that the end_reason attribute metadata which indicates that it is an enumeration,
+        is not lost
+        """
+
+        input_folder = os.path.join(test_data, 'single_reads')
+        compress_batch(input_folder=input_folder, output_folder=self.save_path,
+                       target_compression=VBZ)
+
+        self.assert_all_files_retain_end_reason_enumeration_metadata()
 
     @patch('ont_fast5_api.conversion_tools.compress_fast5.get_progress_bar')
     def test_compress_in_place(self, mock_pbar):

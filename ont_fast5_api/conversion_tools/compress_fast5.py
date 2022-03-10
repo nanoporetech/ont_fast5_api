@@ -95,11 +95,11 @@ def compress_single_read(output_f5, read_to_copy, target_compression, sanitize=F
 def main():
     parser = ArgumentParser("Tool for changing the compression of Fast5 files")
     parser.add_argument('-i', '--input_path', required=True,
-                        help='Folder containing single read fast5 files')
+                        help='Folder containing fast5 files')
 
     output_group = parser.add_mutually_exclusive_group(required=True)
     save_arg = output_group.add_argument('-s', '--save_path', default=None,
-                                         help="Folder to output multi read files to")
+                                         help="Folder to output fast5 read files to")
     output_group.add_argument('--in_place', action='store_true',
                               help='Replace the old files with new files in place')
 
@@ -119,7 +119,7 @@ def main():
     if args.input_path == args.save_path:
         raise ArgumentError(save_arg, "--input_path and --save_path must be different locations, or use --in_place")
     if args.sanitize and args.save_path is None:
-        raise ArgumentError(save_args, "--save_path must be given if using --sanitize")
+        raise ArgumentError(save_arg, "--save_path must be given if using --sanitize")
 
     compress_batch(input_folder=args.input_path,
                    output_folder=args.save_path,

@@ -3,6 +3,7 @@ import h5py
 from ont_fast5_api import CURRENT_FAST5_VERSION
 from ont_fast5_api.fast5_file import Fast5File, Fast5FileTypeError
 from ont_fast5_api.fast5_read import AbstractFast5, Fast5Read
+from ont_fast5_api.helpers import copy_attributes
 from ont_fast5_api.static_data import HARDLINK_GROUPS, OPTIONAL_READ_GROUPS
 
 
@@ -145,8 +146,3 @@ class MultiFast5File(AbstractFast5):
             else:
                 if not sanitize:
                     output_group.copy(read_to_add.handle[subgroup], subgroup)
-
-
-def copy_attributes(input_attrs, output_group):
-    for k, v in input_attrs.items():
-        output_group.attrs[k] = v

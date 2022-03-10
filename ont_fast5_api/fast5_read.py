@@ -1,11 +1,13 @@
 from configparser import ConfigParser
 
+import h5py
 import numpy as np
 import warnings
 from collections import deque
 
 from ont_fast5_api.compression_settings import VBZ, raise_missing_vbz_error_read, raise_missing_vbz_error_write
 from ont_fast5_api.data_sanitisation import _sanitize_data_for_reading, _sanitize_data_for_writing, _clean
+from ont_fast5_api.helpers import copy_attributes
 from ont_fast5_api.static_data import LEGACY_COMPONENT_NAMES
 
 
@@ -551,18 +553,8 @@ class Fast5Read(AbstractFast5):
         if clear:
             for key in path_attr.keys():
                 del path_attr[key]
-        for key, value in attrs.items():
-            path_attr[key] = value
 
-    def _get_attributes(self, path):
-        """
-        :param path: filepath within fast5
-        :return: dictionary of attributes found at ``path``
-        :rtype dict
-        """
-        path_grp = self.handle[path]
-        path_attr = path_grp.attrs
-        return dict(path_attr)
+        copy_attributes(attrs, path_grp)
 
     def _add_attribute_tree(self, group, config):
         for folder, data in config.items():
