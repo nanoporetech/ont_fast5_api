@@ -28,7 +28,7 @@ def _sanitize_data_for_writing(data):
     if isinstance(data, str):
         # Plain python-strings can be encoded trivially
         return data.encode()
-    elif isinstance(data, np.ndarray) and data.dtype.kind == np.dtype(np.unicode):
+    elif isinstance(data, np.ndarray) and data.dtype.kind == np.dtype(np.unicode_):
         # If the array is all of one type, unicode-string, we can encode with numpy
         return data.astype('S')
     elif isinstance(data, np.ndarray) and len(data.dtype) > 1:
