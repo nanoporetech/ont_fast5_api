@@ -81,8 +81,7 @@ class EventDetectionTools(BaseTool):
             sample_size = 1.0 / channel_info['sampling_rate']
             descr = [(x[0], 'float64') if x[0] in ('start', 'length') else x
                      for x in dataset.dtype.descr]
-            with dataset.astype(np.dtype(descr)):
-                data = dataset[()]
+            data = dataset.astype(np.dtype(descr))[()]
             data['start'] *= sample_size
             data['length'] *= sample_size
         else:
