@@ -3,7 +3,7 @@ import numpy
 from unittest.mock import patch
 from pathlib import Path
 
-from ont_fast5_api.compression_settings import VBZ_V0
+from ont_fast5_api.compression_settings import VBZ
 from ont_fast5_api.conversion_tools.fast5_subset import Fast5Filter
 from ont_fast5_api.conversion_tools.conversion_utils import Fast5FilterWorker, extract_selected_reads, read_generator
 from ont_fast5_api.multi_fast5 import MultiFast5File
@@ -106,7 +106,7 @@ class TestFast5Subset(TestFast5ApiHelper):
             read_set=self.read_set,
             batch_size=batch_size,
             filename_base="batch",
-            target_compression=VBZ_V0,
+            target_compression=VBZ,
             progressbar=mock_pbar,
             logger=mock_logger
         )
@@ -124,7 +124,7 @@ class TestFast5Subset(TestFast5ApiHelper):
         f._update_file_lists(reads={}, in_file=None, out_file=output_file)
         self.assertEqual(len(f.input_f5s), num_files_queued)
         self.assertEqual(len(f.available_out_files), 1)
-        self.assertEqual(compression, VBZ_V0)
+        self.assertEqual(compression, VBZ)
 
         # this results in another args tuple generated
         new_args_combos = list(f._args_generator())

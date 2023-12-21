@@ -28,26 +28,26 @@ class AbstractCompression:
         return {}
 
 
-class VbzCompression(AbstractCompression):
+class VbzCompressionV1Alpha(AbstractCompression):
     def __init__(self):
         self.compression = 32020  # https://portal.hdfgroup.org/display/support/Registered+Filters
         self.compression_opts = (1, 2, 1, 1)  # VBZ_VERSION, VBZ_PACKING, VBZ_ZIG_ZAG, VBZ_ZSTD_COMPRESSION
 
     def __repr__(self):
-        return "vbz"
+        return "vbz_v1.alpha"
 
     @property
     def filter_settings(self):
         return {str(self.compression): self.compression_opts}
 
 
-class VbzCompressionV0(AbstractCompression):
+class VbzCompression(AbstractCompression):
     def __init__(self):
         self.compression = 32020  # https://portal.hdfgroup.org/display/support/Registered+Filters
         self.compression_opts = (0, 2, 1, 1)  # VBZ_VERSION, VBZ_PACKING, VBZ_ZIG_ZAG, VBZ_ZSTD_COMPRESSION
 
     def __repr__(self):
-        return "vbz_legacy_v0"
+        return "vbz"
 
     @property
     def filter_settings(self):
@@ -82,8 +82,8 @@ def raise_missing_vbz_error_write(err):
     raise
 
 
+VBZ_ALPHA = VbzCompressionV1Alpha()
 VBZ = VbzCompression()
-VBZ_V0 = VbzCompressionV0()
 GZIP = GzipCompression()
 
-COMPRESSION_MAP = {str(comp): comp for comp in (VBZ, VBZ_V0, GZIP)}
+COMPRESSION_MAP = {str(comp): comp for comp in (VBZ_ALPHA, VBZ, GZIP)}

@@ -4,6 +4,15 @@ All notable changes and fixes to ont_fast5_api will be documented here
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 This project (aspires to) adhere to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [4.1.2]
+
+### Added
+- Support for h5py>=3.9
+### Changed
+- Renamed VBZ compression settings to make it clearer which version is used in production
+### Removed
+- Support for python3.6
+
 ## [4.1.1]
 
 ### Fixed

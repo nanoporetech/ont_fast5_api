@@ -1,11 +1,11 @@
-__version__ = '4.1.1'
+__version__ = '4.1.2'
 __version_info__ = tuple([int(num) for num in __version__.split('.')])
 CURRENT_FAST5_VERSION = 2.0
 
 import sys
 if sys.version_info < (3,):
     raise ImportError(
-    """ont-fast5-api requires Python 3, ideally >=3.5.
+    """ont-fast5-api requires Python 3.7
 
     Somehow you have ended up running this on Python 2, which reached its end of
     life in 2019. Apologies! To avoid this issue, either:

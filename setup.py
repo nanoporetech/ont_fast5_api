@@ -22,7 +22,7 @@ with open('README.rst') as readme:
 
 installation_requirements = []
 if 'IGNORE_INCLUDES' not in os.environ:
-    installation_requirements = ['h5py>=2.10',
+    installation_requirements = ['h5py>=3',
                                  'numpy>=1.16',
                                  'packaging',
                                  'progressbar33>=2.3.1']
@@ -37,7 +37,7 @@ setup(name=__pkg_name__.replace("_", "-"),
       install_requires=installation_requirements,
       packages=find_packages(),
       package_data={__pkg_name__: ['vbz_plugin/*.so', 'vbz_plugin/*.dylib', 'vbz_plugin/*.dll']},
-      python_requires='>=3.6',
+      python_requires='>=3.7',
       entry_points={'console_scripts': [
           "multi_to_single_fast5={}.conversion_tools.multi_to_single_fast5:main".format(__pkg_name__),
           "single_to_multi_fast5={}.conversion_tools.single_to_multi_fast5:main".format(__pkg_name__),

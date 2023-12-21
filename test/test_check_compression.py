@@ -3,7 +3,7 @@ import unittest
 
 import numpy
 
-from ont_fast5_api.compression_settings import GZIP, VBZ
+from ont_fast5_api.compression_settings import GZIP, VBZ_ALPHA
 from ont_fast5_api.conversion_tools.check_file_compression import check_read_compression, check_compression
 from ont_fast5_api.fast5_file import Fast5File
 from ont_fast5_api.fast5_interface import get_fast5_file
@@ -29,7 +29,7 @@ class TestCheckCompression(unittest.TestCase):
         with get_fast5_file(os.path.join(test_data, 'vbz_reads', 'vbz_reads.fast5'), 'r') as f5:
             for read in f5.get_reads():
                 compression = check_read_compression(read)
-                self.assertEqual(compression, VBZ)
+                self.assertEqual(compression, VBZ_ALPHA)
 
     def test_check_single_read_folder(self):
         input_folder = os.path.join(test_data, 'single_reads')
@@ -53,7 +53,7 @@ class TestCheckCompression(unittest.TestCase):
             input_path = os.path.join(input_folder, input_file)
             with MultiFast5File(input_path, 'r') as f5:
                 for read in f5.get_reads():
-                    expected_results.append((VBZ, read.read_id, input_path))
+                    expected_results.append((VBZ_ALPHA, read.read_id, input_path))
 
         # Test check all reads True
         compression_results = list(check_compression(input_folder, recursive=False, follow_symlinks=False,
