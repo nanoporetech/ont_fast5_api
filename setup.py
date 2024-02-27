@@ -25,7 +25,8 @@ if 'IGNORE_INCLUDES' not in os.environ:
     installation_requirements = ['h5py>=3',
                                  'numpy>=1.16',
                                  'packaging',
-                                 'progressbar33>=2.3.1']
+                                 'progressbar33>=2.3.1',
+                                 'setuptools']
 
 setup(name=__pkg_name__.replace("_", "-"),
       author='Oxford Nanopore Technologies, Limited',

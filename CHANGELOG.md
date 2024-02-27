@@ -4,6 +4,11 @@ All notable changes and fixes to ont_fast5_api will be documented here
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 This project (aspires to) adhere to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [4.1.3]
+
+### Added
+- Support for python up to 3.12
+
 ## [4.1.2]
 
 ### Added
